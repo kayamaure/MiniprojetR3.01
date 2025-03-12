@@ -1,60 +1,58 @@
 <?php
-/**
- * Contrôleur de connexion
- *
- * Ce fichier gère le processus d'authentification des utilisateurs.
- * - Si la méthode est POST : vérifie les informations de connexion fournies.
- * - Si la méthode est GET ou autre : affiche le formulaire de connexion.
- */
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+// ConnexionController.php for API authentication (login)
+header("Content-Type: application/json");
+
+// Allow only POST requests
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    echo json_encode(["error" => "Invalid request method."]);
+    exit();
 }
-require_once '../config/database.php';
-require_once '../models/Utilisateur.php';
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // Création d'une instance de connexion à la base de données
-    $database = new Database();
-    $db = $database->getConnection();
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../models/Utilisateur.php';
+require_once __DIR__ . '/../jwt_helper.php';
+
+// Get POST data (assuming JSON input)
+$input = json_decode(file_get_contents("php://input"), true);
+if (!isset($input['nom_utilisateur']) || !isset($input['mot_de_passe'])) {
+    echo json_encode(["error" => "Missing required fields."]);
+    exit();
+}
+
+$nom_utilisateur = trim($input['nom_utilisateur']);
+$mot_de_passe = $input['mot_de_passe'];
+
+// Create database connection
+$database = new Database();
+$db = $database->getConnection();
+
+// Create the user object
+$utilisateur = new Utilisateur($db);
+
+if ($utilisateur->verifierUtilisateur($nom_utilisateur, $mot_de_passe)) {
+    // Retrieve the user ID
+    $query = "SELECT id_utilisateur FROM utilisateur WHERE nom_utilisateur = :nom_utilisateur LIMIT 1";
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':nom_utilisateur', $nom_utilisateur);
+    $stmt->execute();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // Création de l'objet utilisateur
-    $utilisateur = new Utilisateur($db);
-
-    // Récupération des données du formulaire
-    $nom_utilisateur = trim($_POST['nom_utilisateur']);
-    $mot_de_passe = $_POST['mot_de_passe'];
-
-    // Vérification des informations de connexion
-    if ($utilisateur->verifierUtilisateur($nom_utilisateur, $mot_de_passe)) {
-        // Authentification réussie : on stocke l'ID de l'utilisateur dans la session
-        // (On fait une petite requête pour récupérer l'id_utilisateur, 
-        //  puisque verifierUtilisateur() renvoie juste true/false)
-        $query = "SELECT id_utilisateur 
-                  FROM utilisateur 
-                  WHERE nom_utilisateur = :nom_utilisateur 
-                  LIMIT 1";
-        $stmt = $db->prepare($query);
-        $stmt->bindParam(':nom_utilisateur', $nom_utilisateur);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // Si on a trouvé un id_utilisateur, on le met en session
-        if ($row && isset($row['id_utilisateur'])) {
-            $_SESSION['id_utilisateur'] = $row['id_utilisateur'];
-        }
-
-        // Vous pouvez garder l’ancien usage si vous souhaitez aussi conserver le nom utilisateur :
-        $_SESSION['utilisateur'] = $nom_utilisateur;
-
-        // Redirection vers le tableau de bord
-        header("Location: ../views/dashboard.php");
+    if ($row && isset($row['id_utilisateur'])) {
+        $userId = $row['id_utilisateur'];
+        // Create JWT payload
+        $payload = [
+            "id_utilisateur" => $userId,
+            "nom_utilisateur" => $nom_utilisateur,
+            "iat" => time(),
+            "exp" => time() + (60 * 60) // Token valid for 1 hour
+        ];
+        $secret = "123Top@Bruh"; // Change this to a secure secret key
+        $token = create_jwt($payload, $secret);
+        echo json_encode(["success" => true, "token" => $token]);
         exit();
-    } else {
-        // Authentification échouée : message d'erreur
-        $erreur = "Nom d'utilisateur ou mot de passe incorrect.";
-        require '../views/connexion.php';
     }
 } else {
-    // Si la requête n'est pas en méthode POST, afficher le formulaire de connexion
-    require '../views/connexion.php';
+    echo json_encode(["error" => "Invalid credentials."]);
+    exit();
 }
+?>

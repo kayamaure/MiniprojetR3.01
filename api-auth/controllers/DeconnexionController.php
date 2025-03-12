@@ -1,12 +1,8 @@
 <?php
-/**
- * Script de déconnexion
- *
- * Ce fichier gère la déconnexion de l'utilisateur en détruisant la session
- * active et en redirigeant vers la page de connexion.
- */
-session_start();
-session_unset();
-session_destroy();
-header("Location: ../views/connexion.php");
-exit();
+// DeconnexionController.php for API authentication (logout)
+header("Content-Type: application/json");
+
+// In a stateless JWT system, logout is managed client-side by deleting the token.
+// Optionally, implement token invalidation if needed.
+echo json_encode(["success" => "Logout successful."]);
+?>

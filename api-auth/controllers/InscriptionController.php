@@ -1,40 +1,40 @@
 <?php
-/**
- * Contrôleur d'inscription
- *
- * Ce fichier gère l'inscription des nouveaux utilisateurs.
- * Il vérifie les données soumises, les insère dans la base de données si elles sont valides,
- * et redirige l'utilisateur en conséquence.
- */
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}require_once '../config/database.php';
-require_once '../models/Utilisateur.php';
+// InscriptionController.php for API authentication (registration)
+header("Content-Type: application/json");
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $database = new Database();
-    $db = $database->getConnection();
-    $utilisateur = new Utilisateur($db);
-
-    // Récupération des données du formulaire
-    $nom_utilisateur = trim($_POST['nom_utilisateur']);
-    $mot_de_passe = $_POST['mot_de_passe'];
-
-    // Vérifier si le nom d'utilisateur existe déjà
-    if ($utilisateur->existeUtilisateur($nom_utilisateur)) {
-        $erreur = "Le nom d'utilisateur existe déjà. Choisissez un autre nom.";
-        require '../views/inscription.php';
-    } else {
-        // Ajouter un nouvel utilisateur avec un mot de passe haché
-        if ($utilisateur->ajouterUtilisateur($nom_utilisateur, $mot_de_passe)) {
-            header("Location: ../views/connexion.php?inscription=success"); // Redirection vers la page de connexion avec un message de succès
-            exit();
-        } else {
-            $erreur = "Erreur lors de la création du compte.";
-            require '../views/inscription.php';
-        }
-    }
-} else {
-    // Afficher le formulaire d'inscription si la méthode n'est pas POST
-    require '../views/inscription.php';
+// Allow only POST requests
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    echo json_encode(["error" => "Invalid request method."]);
+    exit();
 }
+
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../models/Utilisateur.php';
+
+$input = json_decode(file_get_contents("php://input"), true);
+if (!isset($input['nom_utilisateur']) || !isset($input['mot_de_passe'])) {
+    echo json_encode(["error" => "Missing required fields."]);
+    exit();
+}
+
+$nom_utilisateur = trim($input['nom_utilisateur']);
+$mot_de_passe = $input['mot_de_passe'];
+
+$database = new Database();
+$db = $database->getConnection();
+
+$utilisateur = new Utilisateur($db);
+
+// Check if the username already exists
+if ($utilisateur->existeUtilisateur($nom_utilisateur)) {
+    echo json_encode(["error" => "Username already exists."]);
+    exit();
+}
+
+// Add the new user
+if ($utilisateur->ajouterUtilisateur($nom_utilisateur, $mot_de_passe)) {
+    echo json_encode(["success" => "User registered successfully."]);
+} else {
+    echo json_encode(["error" => "User registration failed."]);
+}
+?>
