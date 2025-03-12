@@ -1,9 +1,0 @@
-# Enable Rewrite Engine
-RewriteEngine On
-
-# Force HTTP (disable automatic HTTPS redirection)
-RewriteCond %{HTTPS} on
-RewriteRule ^ http://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-# Set index.php as the default file
-DirectoryIndex index.php

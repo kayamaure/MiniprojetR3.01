@@ -8,7 +8,7 @@ if (!isset($_SESSION['utilisateur'])) {
     exit();
 }
 
-include 'header.php';
+include 'header.php';   
 ?>
 
 <!DOCTYPE html>
@@ -39,10 +39,10 @@ include 'header.php';
             <?php else : ?>
                 <p>Erreur : Utilisateur non connecté.</p>
             <?php endif; ?>
-            <a href="../controllers/JoueursController.php?action=liste" class="btn btn-gestjou">Gestion des Joueurs</a></li>
-            <a href="../controllers/MatchsController.php?action=liste" class="btn btn-gestmatch">Gestion des Matchs</a></li>
-            <a href="../controllers/StatistiquesController.php?action=index" class="btn btn-stat">Statistiques</a></li> 
-            <a href="../controllers/DeconnexionController.php" class="btn btn-deco">Déconnexion</a></li>
+            <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/JoueursController.php?action=liste" class="btn btn-gestjou">Gestion des Joueurs</a>
+            <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/MatchsController.php?action=liste" class="btn btn-gestmatch">Gestion des Matchs</a>
+            <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/StatistiquesController.php?action=index" class="btn btn-stat">Statistiques</a>
+            <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/DeconnexionController.php" class="btn btn-deco">Déconnexion</a>
 
         </div>
     </div>
