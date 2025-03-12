@@ -1,12 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-} // Démarrez la session au début du fichier
-
-if (!isset($_SESSION['utilisateur'])) {
-    header("Location: connexion.php");
-    exit();
-}
+// dashboard.php - Updated to use JWT token authentication
+// We no longer use sessions as authentication is handled via JWT tokens
 
 include 'header.php';   
 ?>
@@ -17,7 +11,7 @@ include 'header.php';
 <head>
     <meta charset="UTF-8">
     <title>Tableau de Bord</title>
-    <link rel="stylesheet" href="../views/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         .btn-stat {
             background-color: #12c2f3;
@@ -31,21 +25,58 @@ include 'header.php';
 </head>
 
 <body>
-    <div class="table-container">
+    <!-- Container for authentication check message -->
+    <div id="auth-message" style="display: none; color: red; text-align: center; margin-top: 20px;">
+        Vous n'êtes pas connecté. Redirection vers la page de connexion...
+    </div>
+
+    <div class="table-container" id="dashboard-content" style="display: none;">
         <div class="dashboard-container">
             <h1>Bienvenue sur le Tableau de Bord</h1>
-            <?php if (isset($_SESSION['utilisateur'])) : ?>
-                <p>Bonjour, <?= htmlspecialchars($_SESSION['utilisateur']); ?> ! Vous êtes connecté.</p>
-            <?php else : ?>
-                <p>Erreur : Utilisateur non connecté.</p>
-            <?php endif; ?>
+            <p>Bonjour, <span id="username"></span> ! Vous êtes connecté.</p>
+            
             <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/JoueursController.php?action=liste" class="btn btn-gestjou">Gestion des Joueurs</a>
             <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/MatchsController.php?action=liste" class="btn btn-gestmatch">Gestion des Matchs</a>
             <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/StatistiquesController.php?action=index" class="btn btn-stat">Statistiques</a>
-            <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/DeconnexionController.php" class="btn btn-deco">Déconnexion</a>
-
+            <button id="logout-btn" class="btn btn-deco">Déconnexion</button>
         </div>
     </div>
+
+    <script>
+        // Check if user is authenticated
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) {
+                // User is not authenticated
+                document.getElementById('auth-message').style.display = 'block';
+                // Redirect to login page after a short delay
+                setTimeout(() => {
+                    window.location.href = 'connexion.php';
+                }, 2000);
+            } else {
+                // User is authenticated, show dashboard content
+                document.getElementById('dashboard-content').style.display = 'block';
+                
+                // Parse the JWT token to get user information
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    document.getElementById('username').textContent = payload.nom_utilisateur || 'Utilisateur';
+                } catch (e) {
+                    console.error('Error parsing token:', e);
+                    document.getElementById('username').textContent = 'Utilisateur';
+                }
+                
+                // Handle logout
+                document.getElementById('logout-btn').addEventListener('click', function() {
+                    // Clear the token from localStorage
+                    localStorage.removeItem('authToken');
+                    // Redirect to login page
+                    window.location.href = 'connexion.php';
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

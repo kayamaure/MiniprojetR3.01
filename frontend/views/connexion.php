@@ -1,36 +1,25 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// connexion.php (in frontend/views)
+// We no longer use sessions here because authentication is handled via the API.
 include 'header.php';
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <title>Connexion</title>
-    <link rel="stylesheet" href="../views/css/style.css"> <!-- Chemin vers la feuille de style -->
-    <style>
-        .btn-create-compte {
-            background-color: #34dbb1;
-            /* Blue */
-        }
-    </style>
+    <!-- Updated path for the stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-
 <body>
     <div class="container">
         <h2>Connexion</h2>
 
-        <!-- Message d'erreur en cas d'échec de connexion -->
-        <?php if (isset($erreur)) : ?>
-            <p class="error-message"><?= htmlspecialchars($erreur) ?></p>
-        <?php endif; ?>
+        <!-- Container for displaying error messages -->
+        <div id="error-message" style="color: red;"></div>
 
-        <!-- Formulaire de connexion -->
-        <form action="../controllers/ConnexionController.php" method="POST">
+        <!-- Login form -->
+        <form id="login-form">
             <label for="nom_utilisateur">Nom d'utilisateur :</label>
             <input type="text" name="nom_utilisateur" id="nom_utilisateur" required>
 
@@ -40,20 +29,47 @@ include 'header.php';
             <button type="submit" class="btn-submit">Se connecter</button>
         </form>
 
-        <!-- Lien pour créer un compte -->
+        <!-- Link to registration page -->
         <p class="create-account-container">
-            Pas encore de compte ? <a href="../controllers/InscriptionController.php" class="btn btn-create-compte">Créer un compte</a>
+            Pas encore de compte ? <a href="inscription.php" class="btn btn-create-compte">Créer un compte</a>
         </p>
     </div>
 
-    <!-- Message de succès après inscription -->
-    <?php if (isset($_GET['inscription']) && $_GET['inscription'] === 'success') : ?>
-        <div class="success-container">
-            <p class="success-message">Compte créé avec succès. Vous pouvez maintenant vous connecter.</p>
-        </div>
-    <?php endif; ?>
+    <script>
+        // Attach a submit event listener to the login form
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Prevent the default form submission
 
+            // Retrieve user input
+            const username = document.getElementById('nom_utilisateur').value;
+            const password = document.getElementById('mot_de_passe').value;
+
+            // Send a POST request to the login endpoint
+            const response = await fetch('http://localhost/MiniprojetR3.01/api-auth/index.php?action=login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    nom_utilisateur: username,
+                    mot_de_passe: password
+                })
+            });
+            
+            // Parse the JSON response
+            const data = await response.json();
+
+            if (data.success) {
+                // Save the JWT token in local storage
+                localStorage.setItem('authToken', data.token);
+                // Redirect the user to the dashboard
+                window.location.href = 'dashboard.php';
+            } else {
+                // Display error message
+                document.getElementById('error-message').innerText = data.error || 'Erreur lors de la connexion.';
+            }
+        });
+    </script>
     <?php include 'footer.php'; ?>
 </body>
-
 </html>

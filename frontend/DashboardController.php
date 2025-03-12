@@ -1,13 +1,9 @@
 <?php
-session_start(); // Démarrage de la session
+// DashboardController.php - Updated to use JWT token authentication
 
-// Vérifie si l'utilisateur est connecté
-if (!isset($_SESSION['utilisateur'])) {
-    // Redirige vers la page de connexion si non connecté
-    header("Location: connexion.php");
-    exit();
-}
+// We no longer use sessions, as authentication is handled via JWT tokens
+// The actual token verification will happen in the dashboard.php via JavaScript
 
-// Inclure la vue dashboard
-include '../views/dashboard.php';
+// Include the dashboard view
+include 'views/dashboard.php';
 ?>

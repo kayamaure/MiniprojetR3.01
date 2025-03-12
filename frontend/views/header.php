@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Tableau de Bord</title>
-    <link rel="stylesheet" href="views/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
 <body>
     <header class="main-header">
         <div class="logo">
-            <a href=""><img src="../img/logo.PNG" alt="Logo" /></a>
+            <a href=""><img src="../assets/img/logo.PNG" alt="Logo" /></a>
         </div>
 
         <nav class="nav-links">
