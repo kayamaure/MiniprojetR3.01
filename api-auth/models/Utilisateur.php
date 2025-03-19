@@ -11,9 +11,9 @@ class Utilisateur {
     }
 
     
-    // Vérifie les informations de connexion d'un utilisateur
+    // Vérifie les informations de connexion d'un utilisateur et retourne les données utilisateur
     public function verifierUtilisateur($nom_utilisateur, $mot_de_passe) {
-        $query = "SELECT mot_de_passe 
+        $query = "SELECT id_utilisateur, nom_utilisateur, mot_de_passe 
                   FROM " . $this->table_name . " 
                   WHERE nom_utilisateur = :nom_utilisateur
                   LIMIT 1";
@@ -23,7 +23,15 @@ class Utilisateur {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Vérifie le hash du mot de passe si la requête a renvoyé un résultat
-        return $row && password_verify($mot_de_passe, $row['mot_de_passe']);
+        if ($row && password_verify($mot_de_passe, $row['mot_de_passe'])) {
+            // Retourne les informations utilisateur
+            return [
+                'id_utilisateur' => $row['id_utilisateur'],
+                'nom_utilisateur' => $row['nom_utilisateur']
+            ];
+        }
+
+        return false;
     }
 
     

@@ -29,28 +29,22 @@ $db = $database->getConnection();
 // Create the user object
 $utilisateur = new Utilisateur($db);
 
-if ($utilisateur->verifierUtilisateur($nom_utilisateur, $mot_de_passe)) {
-    // Retrieve the user ID
-    $query = "SELECT id_utilisateur FROM utilisateur WHERE nom_utilisateur = :nom_utilisateur LIMIT 1";
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(':nom_utilisateur', $nom_utilisateur);
-    $stmt->execute();
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+// Tenter de vérifier l'utilisateur
+$user_info = $utilisateur->verifierUtilisateur($nom_utilisateur, $mot_de_passe);
+
+if ($user_info) {
+    // Créer le payload JWT avec les informations utilisateur
+    $payload = [
+        "id_utilisateur" => $user_info['id_utilisateur'],
+        "nom_utilisateur" => $user_info['nom_utilisateur'],
+        "iat" => time(),
+        "exp" => time() + (60 * 60) // Token valid for 1 hour
+    ];
     
-    if ($row && isset($row['id_utilisateur'])) {
-        $userId = $row['id_utilisateur'];
-        // Create JWT payload
-        $payload = [
-            "id_utilisateur" => $userId,
-            "nom_utilisateur" => $nom_utilisateur,
-            "iat" => time(),
-            "exp" => time() + (60 * 60) // Token valid for 1 hour
-        ];
-        $secret = "123Top@Bruh"; // Change this to a secure secret key
-        $token = create_jwt($payload, $secret);
-        echo json_encode(["success" => true, "token" => $token]);
-        exit();
-    }
+    $secret = "123Top@Bruh"; // Change this to a secure secret key
+    $token = create_jwt($payload, $secret);
+    echo json_encode(["success" => true, "token" => $token]);
+    exit();
 } else {
     echo json_encode(["error" => "Invalid credentials."]);
     exit();

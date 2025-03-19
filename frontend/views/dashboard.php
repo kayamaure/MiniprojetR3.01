@@ -35,9 +35,9 @@ include 'header.php';
             <h1>Bienvenue sur le Tableau de Bord</h1>
             <p>Bonjour, <span id="username"></span> ! Vous êtes connecté.</p>
             
-            <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/JoueursController.php?action=liste" class="btn btn-gestjou">Gestion des Joueurs</a>
-            <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/MatchsController.php?action=liste" class="btn btn-gestmatch">Gestion des Matchs</a>
-            <a href="http://localhost/MiniprojetR3.01/Frontend/controllers/StatistiquesController.php?action=index" class="btn btn-stat">Statistiques</a>
+            <a href="joueurs/index.php" class="btn btn-gestjou">Gestion des Joueurs</a>
+            <a href="matchs/index.php" class="btn btn-gestmatch">Gestion des Matchs</a>
+            <a href="statistiques/statistiques.php" class="btn btn-stat">Statistiques</a>
             <button id="logout-btn" class="btn btn-deco">Déconnexion</button>
         </div>
     </div>
