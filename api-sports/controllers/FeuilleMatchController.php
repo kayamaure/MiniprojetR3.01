@@ -1,244 +1,200 @@
 <?php
+// FeuilleMatchController.php for API (api-sports)
+// This controller handles actions for match sheets (feuilles de match) via JSON API
 
-/**
- * Contrôleur de la feuille de match
- *
- * Ce fichier gère les différentes actions liées à la gestion des feuilles de match,
- * telles que l'ajout, la modification, la suppression, l'évaluation des joueurs,
- * et l'affichage des détails d'un match.
- */
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+header("Content-Type: application/json");
 
-require_once '../models/FeuilleMatch.php';
-require_once '../models/Match.php'; // Inclure le modèle Match
-require_once '../models/Joueur.php'; // Inclure le modèle Joueur
-require_once '../models/Commentaire.php';
-require_once '../models/Participer.php';
+// Use JSON input for POST methods
+$inputData = json_decode(file_get_contents("php://input"), true);
+
+// Include required model and configuration files using absolute paths
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../models/FeuilleMatch.php';
+require_once __DIR__ . '/../models/Match.php';      // Assume GameMatch is defined here
+require_once __DIR__ . '/../models/Joueur.php';
+require_once __DIR__ . '/../models/Commentaire.php';
+require_once __DIR__ . '/../models/Participer.php';
+
+// Create database connection and instantiate the models
 $database = new Database();
 $db = $database->getConnection();
 $feuilleMatch = new FeuilleMatch($db);
 $commentaireModel = new Commentaire($db);
 
+// Get the requested action from the GET parameters; default to "afficher"
 $action = $_GET['action'] ?? 'afficher';
 
 switch ($action) {
 
     case 'afficher':
+        // Display match sheet details (match, titulaires and remplacants)
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
-            echo "ID du match non spécifié.";
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
+        // Assuming GameMatch is defined in Match.php
         $gameMatch = new GameMatch($db);
         $match = $gameMatch->obtenirMatch($id_match);
-
         $titulaires = $feuilleMatch->obtenirTitulairesParMatch($id_match);
         $remplacants = $feuilleMatch->obtenirRemplacantsParMatch($id_match);
 
-        require '../views/feuilles_matchs/index.php';
-        break;
-
-
-        $gameMatch = new GameMatch($db);
-        $match = $gameMatch->obtenirMatch($id_match);
-        $participe = $feuilleMatch->obtenirJoueursParMatch($id_match);
-
-        require '../views/feuilles_matchs/index.php';
+        echo json_encode([
+            "success" => true,
+            "match" => $match,
+            "titulaires" => $titulaires,
+            "remplacants" => $remplacants
+        ]);
+        exit;
         break;
 
     case 'ajouter':
         $id_match = $_GET['id_match'] ?? null;
-
         if (!$id_match) {
-            echo "ID du match non spécifié.";
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
-        $gameMatch = new GameMatch($db);
-        $match = $gameMatch->obtenirMatch($id_match);
-
-        // Obtenir les joueurs non sélectionnés
-        $joueursNonSelectionnes = $feuilleMatch->obtenirJoueursNonSelectionnes($id_match);
-
-        foreach ($joueursNonSelectionnes as &$joueur) {
-            $joueur['moyenne_evaluation'] = $feuilleMatch->obtenirMoyenneEvaluation($joueur['numero_licence']);
-            $joueur['commentaire'] = $commentaireModel->obtenirDernierCommentaireParJoueur($joueur['numero_licence']); // Adjust this method
+        // If GET, return match info with unselected players
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $gameMatch = new GameMatch($db);
+            $match = $gameMatch->obtenirMatch($id_match);
+            $joueursNonSelectionnes = $feuilleMatch->obtenirJoueursNonSelectionnes($id_match);
+            foreach ($joueursNonSelectionnes as &$joueur) {
+                $joueur['moyenne_evaluation'] = $feuilleMatch->obtenirMoyenneEvaluation($joueur['numero_licence']);
+                $joueur['commentaire'] = $commentaireModel->obtenirDernierCommentaireParJoueur($joueur['numero_licence']);
+            }
+            unset($joueur);
+            echo json_encode([
+                "success" => true,
+                "match" => $match,
+                "joueursNonSelectionnes" => $joueursNonSelectionnes
+            ]);
+            exit;
         }
-
-        unset($joueur);
-
+        // If POST, add a player to the match sheet
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isset($inputData['numero_licence'], $inputData['id_match'], $inputData['role'], $inputData['poste'])) {
+                echo json_encode(["error" => "Champs requis manquants."]);
+                exit;
+            }
             $data = [
-                'numero_licence' => $_POST['numero_licence'],
-                'id_match' => $_POST['id_match'],
-                'role' => $_POST['role'],
-                'poste' => $_POST['poste']
+                'numero_licence' => $inputData['numero_licence'],
+                'id_match'        => $inputData['id_match'],
+                'role'            => $inputData['role'],
+                'poste'           => $inputData['poste']
             ];
-
             try {
                 $feuilleMatch->ajouterJoueur($data);
-                header("Location: FeuilleMatchController.php?action=afficher&id_match=" . $_POST['id_match']);
-                exit();
+                echo json_encode(["success" => "Joueur ajouté avec succès."]);
+                exit;
             } catch (Exception $e) {
-                echo "Erreur : " . $e->getMessage();
+                echo json_encode(["error" => "Erreur: " . $e->getMessage()]);
+                exit;
             }
         }
-
-        require '../views/feuilles_matchs/ajouter.php';
         break;
-
-
 
     case 'evaluer':
+        // Retrieve players to be evaluated for a given match
         $id_match = $_GET['id_match'] ?? null;
-
         if (!$id_match) {
-            echo "ID du match non spécifié.";
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
-        // Récupérer les selectionnés joueurs pour le match donné
         $participe = $feuilleMatch->obtenirJoueursParMatch($id_match);
-
-
-        require '../views/feuilles_matchs/evaluer.php';
+        echo json_encode(["success" => true, "joueurs" => $participe]);
+        exit;
         break;
-
 
     case 'valider_evaluation':
+        // Validate and update evaluations for players in a match
         $id_match = $_GET['id_match'] ?? null;
-
         if (!$id_match) {
-            echo "<script>alert('ID du match non spécifié.'); window.location.href='FeuilleMatchController.php?action=afficherAF';</script>";
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
-        // Récupérer les données du formulaire
-        $evaluations = $_POST['evaluations'] ?? [];
-        $roles = $_POST['roles'] ?? [];
-        $postes = $_POST['postes'] ?? [];
-
-        if (empty($evaluations)) {
-            echo "<script>alert('Aucune évaluation soumise.'); window.location.href='FeuilleMatchController.php?action=afficher';</script>";
+        if (empty($inputData['evaluations'])) {
+            echo json_encode(["error" => "Aucune évaluation soumise."]);
             exit;
         }
-
-        $feuilleModel = new FeuilleMatch($db);
-
+        $evaluations = $inputData['evaluations'];
+        $roles = $inputData['roles'] ?? [];
+        $postes = $inputData['postes'] ?? [];
         try {
             foreach ($evaluations as $numero_licence => $evaluation) {
-                // Validation de l'évaluation
                 if (!is_numeric($evaluation) || $evaluation < 1 || $evaluation > 5) {
-                    echo "<script>alert('Les évaluations doivent être des nombres entre 1 et 5.'); window.location.href='FeuilleMatchController.php?action=index';</script>";
+                    echo json_encode(["error" => "Les évaluations doivent être des nombres entre 1 et 5."]);
                     exit;
                 }
-
-                // Construire les données pour la mise à jour
                 $data = [
-                    'evaluation' => $evaluation,
-                    'numero_licence' => $numero_licence,
-                    'id_match' => $id_match,
-                    'role' => $roles[$numero_licence] ?? null,
-                    'poste' => $postes[$numero_licence] ?? null,
+                    'evaluation'      => $evaluation,
+                    'numero_licence'  => $numero_licence,
+                    'id_match'        => $id_match,
+                    'role'            => $roles[$numero_licence] ?? null,
+                    'poste'           => $postes[$numero_licence] ?? null
                 ];
-
-                // Appeler la fonction mettreAJourEvaluation
-                $feuilleModel->mettreAJourEvaluation($data);
+                $feuilleMatch->mettreAJourEvaluation($data);
             }
-
-            // Redirection après succès
-            echo "<script>alert('Évaluations enregistrées avec succès.'); window.location.href='FeuilleMatchController.php?action=afficher&id_match=$id_match';</script>";
+            echo json_encode(["success" => "Évaluations enregistrées avec succès."]);
             exit;
         } catch (Exception $e) {
-            echo "<script>alert('Erreur lors de l\'enregistrement des évaluations : " . htmlspecialchars($e->getMessage()) . "'); window.location.href='FeuilleMatchController.php?action=evaluer&id_match=$id_match';</script>";
+            echo json_encode(["error" => "Erreur lors de l'enregistrement: " . $e->getMessage()]);
             exit;
         }
-
+        break;
 
     case 'modifier':
+        // Return current players (titulaires and remplacants) for modification
         $id_match = $_GET['id_match'] ?? null;
-
         if (!$id_match) {
-            echo "ID du match non spécifié.";
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
-        // Récupérer les joueurs actuels (titulaires et remplaçants)
         $titulaires = $feuilleMatch->obtenirTitulairesParMatch($id_match) ?? [];
         $remplacants = $feuilleMatch->obtenirRemplacantsParMatch($id_match) ?? [];
-
-        // Charger la vue de modification
-        require '../views/feuilles_matchs/modifier.php';
+        echo json_encode([
+            "success" => true,
+            "titulaires" => $titulaires,
+            "remplacants" => $remplacants
+        ]);
+        exit;
         break;
-
-
-
-
 
     case 'supprimer':
+        // Delete selected players from a match sheet
         $id_match = $_GET['id_match'] ?? null;
-
         if (!$id_match) {
-            $_SESSION['error'] = "ID du match non spécifié.";
-            header("Location: FeuilleMatchController.php?action=afficher");
-            exit();
-        }
-
-        // Récupérer les joueurs actuels (titulaires et remplaçants)
-        $titulaires = $feuilleMatch->obtenirTitulairesParMatch($id_match) ?? [];
-        $remplacants = $feuilleMatch->obtenirRemplacantsParMatch($id_match) ?? [];
-
-        // Afficher la vue de suppression
-        require '../views/feuilles_matchs/supprimer.php';
-        break;
-
-    case 'valider_suppression':
-        $id_match = $_GET['id_match'] ?? null;
-
-        if (!$id_match) {
-            $_SESSION['error'] = "ID du match non spécifié.";
-            header("Location: FeuilleMatchController.php?action=afficher");
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
-        $joueursASupprimer = $_POST['joueur_a_supprimer'] ?? [];
-
-        // Vérifier si aucune sélection n'a été faite
+        $input = json_decode(file_get_contents("php://input"), true);
+        $joueursASupprimer = $input['joueur_a_supprimer'] ?? [];
         if (empty($joueursASupprimer)) {
-            $_SESSION['error'] = "Aucun joueur sélectionné pour suppression.";
-            header("Location: FeuilleMatchController.php?action=supprimer&id_match={$id_match}");
+            echo json_encode(["error" => "Aucun joueur sélectionné pour suppression."]);
             exit;
         }
-
         try {
             foreach ($joueursASupprimer as $joueur) {
                 $numeroLicence = $joueur['numero_licence'];
                 $feuilleMatch->supprimerJoueurParLicenceEtMatch($numeroLicence, $id_match);
             }
-
-            $_SESSION['success'] = "Les joueurs sélectionnés ont été supprimés avec succès.";
-            header("Location: FeuilleMatchController.php?action=afficher&id_match={$id_match}");
+            echo json_encode(["success" => "Les joueurs sélectionnés ont été supprimés avec succès."]);
             exit;
         } catch (Exception $e) {
-            $_SESSION['error'] = "Erreur lors de la suppression : " . $e->getMessage();
-            header("Location: FeuilleMatchController.php?action=supprimer&id_match={$id_match}");
+            echo json_encode(["error" => "Erreur lors de la suppression: " . $e->getMessage()]);
             exit;
         }
-
+        break;
 
     case 'valider_selection':
+        // Validate the player selection for a match (ensure at least 11 titulaires)
         $id_match = $_GET['id_match'] ?? null;
-
         if (!$id_match) {
-            echo "<script>alert('ID du match non spécifié.'); window.location.href='FeuilleMatchController.php?action=selectionner&id_match={$id_match}';</script>";
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
-        $selections = $_POST['joueur_selectionnes'] ?? [];
-
+        $input = json_decode(file_get_contents("php://input"), true);
+        $selections = $input['joueur_selectionnes'] ?? [];
         $titularCount = 0;
         $joueursValides = array_filter($selections, function ($selection) use (&$titularCount) {
             if (!empty($selection['numero_licence']) && !empty($selection['role']) && !empty($selection['poste'])) {
@@ -249,115 +205,81 @@ switch ($action) {
             }
             return false;
         });
-
         if ($titularCount < 11) {
-            echo "<script>alert('Vous devez sélectionner au moins 11 titulaires.'); window.location.href='FeuilleMatchController.php?action=selectionner&id_match={$id_match}';</script>";
+            echo json_encode(["error" => "Vous devez sélectionner au moins 11 titulaires."]);
             exit;
         }
-
-        require_once '../models/Participer.php';
         $participerModel = new Participer($db);
-
         try {
             foreach ($joueursValides as $selection) {
                 $data = [
                     'numero_licence' => $selection['numero_licence'],
-                    'id_match' => $id_match,
-                    'role' => $selection['role'],
-                    'poste' => $selection['poste'],
-                    'evaluation' => null
+                    'id_match'       => $id_match,
+                    'role'           => $selection['role'],
+                    'poste'          => $selection['poste'],
+                    'evaluation'     => null
                 ];
                 $participerModel->ajouterSelection($data);
             }
-
-            echo "<script>alert('Sélection validée avec succès.'); window.location.href='FeuilleMatchController.php?action=afficher&id_match={$id_match}';</script>";
+            echo json_encode(["success" => "Sélection validée avec succès."]);
             exit;
         } catch (Exception $e) {
-            echo "<script>alert('Erreur : {$e->getMessage()}'); window.location.href='FeuilleMatchController.php?action=selectionner&id_match={$id_match}';</script>";
+            echo json_encode(["error" => "Erreur: " . $e->getMessage()]);
             exit;
         }
-
-
+        break;
 
     case 'valider_modification':
+        // Validate modifications to the player selection
         $id_match = $_GET['id_match'] ?? null;
-
         if (!$id_match) {
-            echo "<script>alert('ID du match non spécifié.'); window.location.href='FeuilleMatchController.php?action=modifier&id_match={$id_match}';</script>";
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
-        $selections = $_POST['joueur_selectionnes'] ?? [];
-
-        // Compter le nombre de titulaires
-        $titularCount = 0;
-        foreach ($selections as $selection) {
-            if ($selection['role'] === 'Titulaire') {
-                $titularCount++;
-            }
-        }
-
+        $input = json_decode(file_get_contents("php://input"), true);
+        $selections = $input['joueur_selectionnes'] ?? [];
         try {
             foreach ($selections as $selection) {
                 $data = [
                     'numero_licence' => $selection['numero_licence'],
-                    'id_match' => $id_match,
-                    'role' => $selection['role'],
-                    'poste' => $selection['poste']
+                    'id_match'       => $id_match,
+                    'role'           => $selection['role'],
+                    'poste'          => $selection['poste']
                 ];
                 $feuilleMatch->modifierSelection($data);
             }
-
-            echo "<script>
-                        alert('La sélection a été modifiée avec succès.');
-                        window.location.href='FeuilleMatchController.php?action=afficher&id_match={$id_match}';
-                      </script>";
+            echo json_encode(["success" => "La sélection a été modifiée avec succès."]);
             exit;
         } catch (Exception $e) {
-            echo "<script>
-                        alert('Erreur lors de la modification : " . $e->getMessage() . "');
-                        window.location.href='FeuilleMatchController.php?action=modifier&id_match={$id_match}';
-                      </script>";
+            echo json_encode(["error" => "Erreur lors de la modification: " . $e->getMessage()]);
             exit;
         }
         break;
 
-
-
     case 'valider_feuille':
+        // Validate the match sheet by ensuring there are at least 11 titulaires and updating its state
         $id_match = $_GET['id_match'] ?? null;
-
         if (!$id_match) {
-            $_SESSION['error'] = "ID du match non spécifié.";
-            header("Location: FeuilleMatchController.php?action=afficher");
+            echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-
-        // Vérifier le nombre de titulaires
         $titulaires = $feuilleMatch->obtenirTitulairesParMatch($id_match);
-
         if (count($titulaires) < 11) {
-            $_SESSION['error'] = "La feuille de match ne peut pas être validée : moins de 11 titulaires.";
-            header("Location: FeuilleMatchController.php?action=afficher&id_match={$id_match}");
+            echo json_encode(["error" => "La feuille de match ne peut pas être validée : moins de 11 titulaires."]);
             exit;
         }
-
-        // Mettre à jour l'état de la feuille de match
         $result = $feuilleMatch->mettreAJourEtatMatch($id_match, 'Validé');
-
         if ($result) {
-            $_SESSION['success'] = "La feuille de match a été validée avec succès.";
+            echo json_encode(["success" => "La feuille de match a été validée avec succès."]);
         } else {
-            $_SESSION['error'] = "Erreur lors de la validation de la feuille de match.";
+            echo json_encode(["error" => "Erreur lors de la validation de la feuille de match."]);
         }
-
-        header("Location: FeuilleMatchController.php?action=afficher&id_match={$id_match}");
         exit;
         break;
 
-
-
     default:
-        echo "Action non reconnue.";
+        echo json_encode(["error" => "Action non reconnue."]);
+        exit;
         break;
 }
+?>

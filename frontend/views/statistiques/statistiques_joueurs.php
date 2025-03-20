@@ -1,7 +1,7 @@
 <?php if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-include '../views/header.php'; ?>
+include '../header.php'; ?>
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -10,7 +10,7 @@ include '../views/header.php'; ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statistiques des Joueurs</title>
-    <link rel="stylesheet" href="../views/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
 </head>
 
 <body>
@@ -66,7 +66,7 @@ include '../views/header.php'; ?>
 
         <!-- Bouton retour -->
         <div class="return-button">
-            <a href="StatistiquesController.php?action=index" class="btn btn-back">Retour</a>
+            <a href="statistiques.php" class="btn btn-back">Retour</a>
         </div>
     </div>
 </body>

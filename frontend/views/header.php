@@ -1,29 +1,50 @@
-<!DOCTYPE html>
-<html lang="fr">
+<?php
+// Vérification de l'authentification JWT
+$authToken = isset($_COOKIE['authToken']) ? $_COOKIE['authToken'] : null;
 
-<head>
-    <meta charset="UTF-8">
-    <title>Tableau de Bord</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-</head>
+// Déterminer le chemin de base relatif en fonction de l'emplacement du script
+$baseUrl = '/MiniprojetR3.01/frontend';
+?>
+<header class="main-header">
+    <div class="logo">
+        <a href="<?php echo $baseUrl; ?>/views/dashboard.php"><img src="<?php echo $baseUrl; ?>/assets/img/logo.PNG" alt="Logo" /></a>
+    </div>
 
-<body>
-    <header class="main-header">
-        <div class="logo">
-            <a href=""><img src="../assets/img/logo.PNG" alt="Logo" /></a>
-        </div>
+    <nav class="nav-links" id="nav-links">
+        <!-- La navigation sera affichée par JavaScript si le token JWT est présent -->
+        <a href="<?php echo $baseUrl; ?>/views/dashboard.php">Accueil</a>
+        <a href="<?php echo $baseUrl; ?>/views/joueurs/index.php">Joueurs</a>
+        <a href="<?php echo $baseUrl; ?>/views/matchs/index.php">Matchs</a>
+        <a href="<?php echo $baseUrl; ?>/views/statistiques/statistiques.php">Statistiques</a>
+        <a href="<?php echo $baseUrl; ?>/views/mon_compte.php" class="btn btn-account">Mon Compte</a>
+        <a href="#" class="btn-logout" id="logout-btn">Déconnexion</a>
+    </nav>
+</header>
 
-        <nav class="nav-links">
-            <?php if (isset($_SESSION['utilisateur'])) : ?>           
-                <a href="../controllers/DashboardController.php">Accueil</a>
-                <a href="../controllers/JoueursController.php?action=liste">Joueurs</a>
-                <a href="../controllers/MatchsController.php?action=liste  ">Matchs</a>
-                <a href="../controllers/StatistiquesController.php?action=index">Statistiques</a>
-                <a href="../controllers/MonCompteController.php?action=afficher" class="btn btn-account">Mon Compte</a>
-                <a href="../controllers/DeconnexionController.php" class="btn-logout">Déconnexion</a>
-            <?php endif; ?>
-        </nav>
-    </header>
-</body>
-
-</html>
+<script>
+    // Vérifier si l'utilisateur est authentifié avec JWT
+    document.addEventListener('DOMContentLoaded', function() {
+        const token = localStorage.getItem('authToken');
+        const navLinks = document.getElementById('nav-links');
+        const logoutBtn = document.getElementById('logout-btn');
+        
+        // Afficher/masquer la navigation selon la présence du token
+        if (!token) {
+            // Masquer les liens de navigation si pas de token
+            if (navLinks) {
+                navLinks.style.display = 'none';
+            }
+        } else {
+            // Configurer le bouton de déconnexion
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Supprimer le token JWT
+                    localStorage.removeItem('authToken');
+                    // Rediriger vers la page de connexion
+                    window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
+                });
+            }
+        }
+    });
+</script>

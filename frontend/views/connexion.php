@@ -110,3 +110,46 @@ include 'header.php';
     <?php include 'footer.php'; ?>
 </body>
 </html>
+
+                    debugInfo.innerHTML = `<h4>Informations de performance</h4>
+                        <p>Temps total de réponse: ${responseTime.toFixed(2)} ms</p>
+                        <p>Temps total coûté serveur: ${(data.debug.total_time * 1000).toFixed(2)} ms</p>
+                        <p>Temps de connexion à la base de données: ${(data.debug.db_connection_time * 1000).toFixed(2)} ms</p>
+                        <p>Temps de vérification utilisateur: ${(data.debug.user_verification_time * 1000).toFixed(2)} ms</p>`;
+                    
+                    // Afficher les détails de vérification utilisateur si disponibles
+                    if (data.debug.user_verification_details) {
+                        const details = data.debug.user_verification_details;
+                        debugInfo.innerHTML += `<p>Détails de vérification utilisateur:</p>
+                            <ul>
+                                <li>Préparation de la requête: ${(details.query_prep_time * 1000).toFixed(2)} ms</li>
+                                <li>Exécution de la requête: ${(details.query_execute_time * 1000).toFixed(2)} ms</li>
+                                <li>Récupération des données: ${(details.fetch_time * 1000).toFixed(2)} ms</li>
+                                <li>Vérification du mot de passe: ${(details.password_verify_time * 1000).toFixed(2)} ms</li>
+                            </ul>`;
+                    }
+                }
+
+                if (data.success) {
+                    // Save the JWT token in local storage
+                    localStorage.setItem('authToken', data.token);
+                    // Redirect the user to the dashboard
+                    window.location.href = 'dashboard.php';
+                } else {
+                    // Masquer l'indicateur de chargement
+                    loader.style.display = 'none';
+                    // Display error message
+                    document.getElementById('error-message').innerText = data.error || 'Erreur lors de la connexion.';
+                }
+            } catch (error) {
+                // Masquer l'indicateur de chargement
+                loader.style.display = 'none';
+                // Afficher l'erreur
+                document.getElementById('error-message').innerText = 'Erreur de connexion au serveur. Veuillez réessayer.';
+                console.error('Erreur:', error);
+            }
+        });
+    </script>
+    <?php include 'footer.php'; ?>
+</body>
+</html>

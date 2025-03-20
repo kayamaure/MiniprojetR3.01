@@ -4,17 +4,27 @@ if (session_status() === PHP_SESSION_NONE) {
 } ?>
 
 <!DOCTYPE html>
-<html>
-
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ajouter un joueur</title>
-    <link rel="stylesheet" href="../views/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/style.css">
 </head>
 
 <body>
+    <?php 
+    // Vérification de l'authentification JWT
+    include '../../views/header.php';
+    ?>
+    
     <div class="table-container">
         <h1>Ajouter un nouveau joueur</h1>
-        <form action="JoueursController.php?action=ajouter" method="post">
+        
+        <!-- Message d'erreur -->
+        <div id="error-message" style="color: red;"></div>
+        
+        <form id="joueur-form">
             <label for="numero_licence">Numéro de licence:</label>
             <input type="text" name="numero_licence" id="numero_licence" required><br>
 
@@ -27,30 +37,74 @@ if (session_status() === PHP_SESSION_NONE) {
             <label for="date_naissance">Date de naissance:</label>
             <input type="date" name="date_naissance" id="date_naissance" required><br>
 
-            <label for="taille">Taille (cm):</label>
-            <input type="number" name="taille" id="taille" required><br>
+            <label for="taille">Taille (m):</label>
+            <input type="number" name="taille" id="taille" step="0.01" min="1.00" max="2.50" required><br>
 
             <label for="poids">Poids (kg):</label>
             <input type="number" name="poids" id="poids" required><br>
 
-            <label>Statut:</label><br>
-            <input type="radio" name="statut" value="Actif" id="actif" checked>
-            <label for="actif">Actif</label><br>
+            <label for="statut">Statut:</label>
+            <select name="statut" id="statut" required>
+                <option value="">Sélectionnez un statut</option>
+                <option value="Actif">Actif</option>
+                <option value="Blessé">Blessé</option>
+                <option value="Suspendu">Suspendu</option>
+                <option value="Inactif">Inactif</option>
+            </select><br>
 
-            <input type="radio" name="statut" value="Blessé" id="blesse">
-            <label for="blesse">Blessé</label><br>
-
-            <input type="radio" name="statut" value="Suspendu" id="suspendu">
-            <label for="suspendu">Suspendu</label><br>
-
-            <input type="radio" name="statut" value="Absent" id="absent">
-            <label for="absent">Absent</label><br><br>
-
-            <button type="submit">Ajouter</button>
+            <input type="submit" value="Ajouter" class="btn btn-add">
+            <a href="index.php" class="btn btn-back">Retour</a>
         </form>
-        <a href="../controllers/JoueursController.php?action=liste" class="btn btn-back">Retour</a>
     </div>
-</body>
 
+    <?php include '../../views/footer.php'; ?>
+    
+    <script>
+        // Vérifier l'authentification au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                // Rediriger vers la page de connexion si pas de token
+                window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
+            }
+            
+            // Gestion du formulaire d'ajout
+            document.getElementById('joueur-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                try {
+                    const token = localStorage.getItem('authToken');
+                    const formData = new FormData(this);
+                    const joueurData = {};
+                    
+                    // Convertir FormData en objet
+                    for (const [key, value] of formData.entries()) {
+                        joueurData[key] = value;
+                    }
+                    
+                    const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=ajouter_joueur', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(joueurData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Rediriger vers la liste des joueurs
+                        window.location.href = 'index.php';
+                    } else {
+                        document.getElementById('error-message').textContent = data.error || 'Erreur lors de l\'ajout du joueur.';
+                    }
+                } catch (error) {
+                    console.error('Error adding joueur:', error);
+                    document.getElementById('error-message').textContent = 'Erreur lors de l\'ajout du joueur.';
+                }
+            });
+        });
+    </script>
+</body>
 </html>
-<?php include '../views/footer.php'; ?>

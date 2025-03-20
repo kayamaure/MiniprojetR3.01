@@ -36,7 +36,7 @@ include '../../views/header.php'; ?>
 
         <div class="stat-buttons">
         <a href="statistiques_matchs.php" class="btn btn-stat">Statistiques des Matchs</a>
-        <a href="joueurs.php" class="btn btn-stat">Statistiques des Joueurs</a>
+        <a href="statistiques_joueurs.php" class="btn btn-stat">Statistiques des Joueurs</a>
         <a href="../dashboard.php" class="btn btn-back">Retour</a>
         </div>
     </div>
