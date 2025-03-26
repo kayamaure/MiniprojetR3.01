@@ -82,7 +82,8 @@ if (session_status() === PHP_SESSION_NONE) {
                         joueurData[key] = value;
                     }
                     
-                    const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=ajouter_joueur', {
+                    // Utiliser la bonne URL avec le nouveau routage
+                    const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=ajouter', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -100,7 +101,7 @@ if (session_status() === PHP_SESSION_NONE) {
                         document.getElementById('error-message').textContent = data.error || 'Erreur lors de l\'ajout du joueur.';
                     }
                 } catch (error) {
-                    console.error('Error adding joueur:', error);
+                    console.error('Erreur:', error);
                     document.getElementById('error-message').textContent = 'Erreur lors de l\'ajout du joueur.';
                 }
             });

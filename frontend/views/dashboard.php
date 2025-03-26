@@ -38,7 +38,7 @@ include 'header.php';
             <a href="joueurs/index.php" class="btn btn-gestjou">Gestion des Joueurs</a>
             <a href="matchs/index.php" class="btn btn-gestmatch">Gestion des Matchs</a>
             <a href="statistiques/statistiques.php" class="btn btn-stat">Statistiques</a>
-            <button id="logout-btn" class="btn btn-deco">Déconnexion</button>
+            <button id="dashboard-logout-btn" class="btn btn-deco">Déconnexion</button>
         </div>
     </div>
 
@@ -68,7 +68,7 @@ include 'header.php';
                 }
                 
                 // Handle logout
-                document.getElementById('logout-btn').addEventListener('click', function() {
+                document.getElementById('dashboard-logout-btn').addEventListener('click', function() {
                     // Clear the token from localStorage
                     localStorage.removeItem('authToken');
                     // Redirect to login page

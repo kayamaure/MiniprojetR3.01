@@ -1,0 +1,37 @@
+2025-03-26 10:47:49 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: non défini
+2025-03-26 10:47:49 - Action 'matchs' - Filter: all - Nombre de matchs: 2
+2025-03-26 10:47:49 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"},{"id_match":25,"date_match":"2025-02-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Real Madrid","lieu_de_rencontre":"Domicile","statut":"\u00c0 venir","resultat":null,"etat_feuille":"Non valid\u00e9"}]
+2025-03-26 10:47:54 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:47:54 - Action 'matchs' - Filter: all - Nombre de matchs: 2
+2025-03-26 10:47:54 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"},{"id_match":25,"date_match":"2025-02-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Real Madrid","lieu_de_rencontre":"Domicile","statut":"\u00c0 venir","resultat":null,"etat_feuille":"Non valid\u00e9"}]
+2025-03-26 10:48:16 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:48:16 - Action 'matchs' - Filter: all - Nombre de matchs: 2
+2025-03-26 10:48:16 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"},{"id_match":25,"date_match":"2025-02-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Real Madrid","lieu_de_rencontre":"Domicile","statut":"\u00c0 venir","resultat":null,"etat_feuille":"Non valid\u00e9"}]
+2025-03-26 10:48:19 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:48:19 - Action 'matchs' - Filter: all - Nombre de matchs: 2
+2025-03-26 10:48:19 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"},{"id_match":25,"date_match":"2025-02-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Real Madrid","lieu_de_rencontre":"Domicile","statut":"\u00c0 venir","resultat":null,"etat_feuille":"Non valid\u00e9"}]
+2025-03-26 10:48:20 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: passes
+2025-03-26 10:48:20 - Action 'matchs' - Filter: passes - Nombre de matchs: 1
+2025-03-26 10:48:20 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"}]
+2025-03-26 10:48:21 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: a_venir
+2025-03-26 10:48:21 - Action 'matchs' - Filter: a_venir - Nombre de matchs: 1
+2025-03-26 10:48:21 - Données: [{"id_match":25,"date_match":"2025-02-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Real Madrid","lieu_de_rencontre":"Domicile","statut":"\u00c0 venir","resultat":null,"etat_feuille":"Non valid\u00e9"}]
+2025-03-26 10:48:26 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:48:26 - Action 'matchs' - Filter: all - Nombre de matchs: 2
+2025-03-26 10:48:26 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"},{"id_match":25,"date_match":"2025-02-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Real Madrid","lieu_de_rencontre":"Domicile","statut":"\u00c0 venir","resultat":null,"etat_feuille":"Non valid\u00e9"}]
+2025-03-26 10:49:19 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:49:19 - Action 'matchs' - Filter: all - Nombre de matchs: 2
+2025-03-26 10:49:19 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"},{"id_match":25,"date_match":"2025-02-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Real Madrid","lieu_de_rencontre":"Domicile","statut":"\u00c0 venir","resultat":null,"etat_feuille":"Non valid\u00e9"}]
+2025-03-26 10:50:46 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: supprimer_match - Filter: non défini
+2025-03-26 10:50:46 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:50:46 - Action 'matchs' - Filter: all - Nombre de matchs: 1
+2025-03-26 10:50:46 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"}]
+2025-03-26 10:50:48 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:50:48 - Action 'matchs' - Filter: all - Nombre de matchs: 1
+2025-03-26 10:50:48 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"}]
+2025-03-26 10:51:30 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:51:30 - Action 'matchs' - Filter: all - Nombre de matchs: 1
+2025-03-26 10:51:30 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"}]
+2025-03-26 10:51:36 - Script: C:/xampp/htdocs/MiniprojetR3.01/api-sports/index.php - isApiRequest: true - Action: matchs - Filter: all
+2025-03-26 10:51:36 - Action 'matchs' - Filter: all - Nombre de matchs: 1
+2025-03-26 10:51:36 - Données: [{"id_match":24,"date_match":"2024-12-11","heure_match":"11:30:00","nom_equipe_adverse":"FC Juventos","lieu_de_rencontre":"Domicile","statut":"Termin\u00e9","resultat":"Victoire","etat_feuille":"Valid\u00e9"}]

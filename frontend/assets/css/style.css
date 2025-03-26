@@ -305,6 +305,7 @@ form button:hover {
 
 .btn-add-joueur:hover {
     background-color: #45a049;
+}
 
 .btn-feuille {
     background-color: #d6d65b; /* Green */
@@ -314,7 +315,7 @@ form button:hover {
     background-color: #b2b24e; /* Green */
 }
 
-.btn-edit .btn-create-compte {
+.btn-edit, .btn-create-compte {
     background-color: #34dbb1; /* Blue */
 }
 

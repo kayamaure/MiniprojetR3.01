@@ -78,7 +78,8 @@
             
             // Récupérer les informations du joueur
             try {
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=joueur&numero_licence=${joueurId}`, {
+                // Utiliser le contrôleur joueurs avec l'action liste et le paramètre numero_licence
+                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=liste&numero_licence=${joueurId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -91,17 +92,24 @@
                     return;
                 }
                 
-                // Remplir le formulaire avec les données du joueur
-                document.getElementById('numero_licence').value = data.numero_licence;
-                document.getElementById('nom').value = data.nom;
-                document.getElementById('prenom').value = data.prenom;
-                document.getElementById('date_naissance').value = data.date_naissance;
-                document.getElementById('taille').value = data.taille;
-                document.getElementById('poids').value = data.poids;
-                document.getElementById('statut').value = data.statut;
+                // Vérifier que nous avons des données et récupérer le premier joueur (devrait être le seul)
+                if (data.success && data.joueurs && data.joueurs.length > 0) {
+                    const joueur = data.joueurs[0];
+                    
+                    // Remplir le formulaire avec les données du joueur
+                    document.getElementById('numero_licence').value = joueur.numero_licence;
+                    document.getElementById('nom').value = joueur.nom;
+                    document.getElementById('prenom').value = joueur.prenom;
+                    document.getElementById('date_naissance').value = joueur.date_naissance;
+                    document.getElementById('taille').value = joueur.taille;
+                    document.getElementById('poids').value = joueur.poids;
+                    document.getElementById('statut').value = joueur.statut;
+                } else {
+                    document.getElementById('error-message').textContent = 'Joueur non trouvé.';
+                }
                 
             } catch (error) {
-                console.error('Error fetching joueur:', error);
+                console.error('Erreur:', error);
                 document.getElementById('error-message').textContent = 'Erreur lors de la récupération des données du joueur.';
             }
             
@@ -119,8 +127,9 @@
                         joueurData[key] = value;
                     }
                     
-                    const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=modifier_joueur', {
-                        method: 'PUT',
+                    // Utiliser la bonne URL pour la modification avec le nouveau routage
+                    const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=modifier&numero_licence=${joueurData.numero_licence}`, {
+                        method: 'POST', // Le contrôleur attend du POST
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
@@ -137,7 +146,7 @@
                         document.getElementById('error-message').textContent = data.error || 'Erreur lors de la modification du joueur.';
                     }
                 } catch (error) {
-                    console.error('Error updating joueur:', error);
+                    console.error('Erreur:', error);
                     document.getElementById('error-message').textContent = 'Erreur lors de la modification du joueur.';
                 }
             });

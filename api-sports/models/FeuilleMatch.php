@@ -23,6 +23,79 @@ class FeuilleMatch
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Récupérer tous les joueurs sélectionnés avec ID de sélection pour la modification
+    public function obtenirJoueursSelectionnes($id_match)
+    {
+        $query = "SELECT p.id AS id_selection, j.nom, j.prenom, p.role, p.poste, j.numero_licence
+                FROM " . $this->table . " p
+                JOIN joueur j ON p.numero_licence = j.numero_licence
+                WHERE p.id_match = :id_match
+                ORDER BY p.role ASC, p.poste ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_match', $id_match);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Mettre à jour le rôle et le poste d'un joueur dans la sélection
+    public function mettreAJourJoueurSelection($id_selection, $role = null, $poste = null)
+    {
+        // Vérifier si l'ID de sélection est fourni
+        if (empty($id_selection)) {
+            return false;
+        }
+
+        // Construire la requête de mise à jour en fonction des paramètres fournis
+        $updateFields = [];
+        $params = [':id_selection' => $id_selection];
+
+        if ($role !== null) {
+            $updateFields[] = "role = :role";
+            $params[':role'] = $role;
+        }
+
+        if ($poste !== null) {
+            $updateFields[] = "poste = :poste";
+            $params[':poste'] = $poste;
+        }
+
+        // Si aucun champ à mettre à jour, retourner vrai (rien à faire)
+        if (empty($updateFields)) {
+            return true;
+        }
+
+        // Construire la requête SQL
+        $query = "UPDATE " . $this->table . " SET " . implode(", ", $updateFields) . " WHERE id = :id_selection";
+        $stmt = $this->conn->prepare($query);
+
+        // Lier les paramètres
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        // Exécuter la requête
+        $result = $stmt->execute();
+
+        // Si la mise à jour a réussi, mettre à jour l'état de la feuille de match
+        if ($result) {
+            // D'abord, récupérer l'id_match associé à cette sélection
+            $queryGetMatch = "SELECT id_match FROM " . $this->table . " WHERE id = :id_selection";
+            $stmtGetMatch = $this->conn->prepare($queryGetMatch);
+            $stmtGetMatch->bindParam(':id_selection', $id_selection);
+            $stmtGetMatch->execute();
+            $matchData = $stmtGetMatch->fetch(PDO::FETCH_ASSOC);
+
+            if ($matchData) {
+                $queryUpdateEtat = "UPDATE match_ SET etat_feuille = 'Non validé' WHERE id_match = :id_match";
+                $stmtUpdateEtat = $this->conn->prepare($queryUpdateEtat);
+                $stmtUpdateEtat->bindParam(':id_match', $matchData['id_match']);
+                $stmtUpdateEtat->execute();
+            }
+        }
+
+        return $result;
+    }
+
     // Ajouter un joueur a une selection pour un match donné
     public function ajouterJoueur($data)
     {
@@ -95,7 +168,7 @@ class FeuilleMatch
 
         return $result;
     }
-    // MAJ de l'évaluation d'un joeur
+    // MAJ de l'évaluation d'un joueur
     public function mettreAJourEvaluation($data)
     {
         // Vérifier si les données sont présentes
@@ -145,12 +218,12 @@ class FeuilleMatch
         $query = "SELECT j.nom AS nom_joueur, j.prenom AS prenom_joueur, p.role, p.poste, j.numero_licence
                   FROM " . $this->table . " p
                   JOIN joueur j ON p.numero_licence = j.numero_licence
-                  WHERE p.id_match = :id_match AND p.role = 'Remplaçant'";
+                  WHERE p.id_match = :id_match AND p.role = 'Remplacant'";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id_match', $id_match);
         $stmt->execute();
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return !empty($results) ? $results : null;
+        return !empty($results) ? $results : [];
     }
     // Récupérer les joueurs non selectionnés d'un match donné
     public function obtenirJoueursNonSelectionnes($id_match)
@@ -216,5 +289,61 @@ class FeuilleMatch
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['moyenne'] ? round($result['moyenne'], 2) : 0.0;
+    }
+
+    // Ajouter un joueur a une selection pour un match donné
+    public function ajouterJoueurAuMatch($data)
+    {
+        // Vérifier si le joueur est déjà enregistré pour ce match
+        $queryCheck = "SELECT COUNT(*) as count FROM " . $this->table . " 
+                       WHERE numero_licence = :numero_licence AND id_match = :id_match";
+        $stmtCheck = $this->conn->prepare($queryCheck);
+        $stmtCheck->bindParam(':numero_licence', $data['numero_licence']);
+        $stmtCheck->bindParam(':id_match', $data['id_match']);
+        $stmtCheck->execute();
+        $result = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+        if ($result['count'] > 0) {
+            return false; // Le joueur est déjà dans la feuille de match
+        }
+
+        // Ajouter le joueur à la feuille de match
+        $query = "INSERT INTO " . $this->table . " (numero_licence, id_match, role, poste) 
+                  VALUES (:numero_licence, :id_match, :role, :poste)";
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(':numero_licence', $data['numero_licence']);
+        $stmt->bindParam(':id_match', $data['id_match']);
+        $stmt->bindParam(':role', $data['role']);
+        $stmt->bindParam(':poste', $data['poste']);
+
+        return $stmt->execute();
+    }
+
+    // Supprimer un joueur de la feuille de match
+    public function supprimerJoueurDuMatch($id_selection)
+    {
+        $query = "DELETE FROM " . $this->table . " WHERE id = :id_selection";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_selection', $id_selection);
+        $result = $stmt->execute();
+
+        // Mettre à jour l'état de la feuille si la suppression réussit
+        if ($result) {
+            $queryGetMatch = "SELECT id_match FROM " . $this->table . " WHERE id = :id_selection";
+            $stmtGetMatch = $this->conn->prepare($queryGetMatch);
+            $stmtGetMatch->bindParam(':id_selection', $id_selection);
+            $stmtGetMatch->execute();
+            $matchData = $stmtGetMatch->fetch(PDO::FETCH_ASSOC);
+
+            if ($matchData) {
+                $queryUpdateEtat = "UPDATE match_ SET etat_feuille = 'Non validé' WHERE id_match = :id_match";
+                $stmtUpdateEtat = $this->conn->prepare($queryUpdateEtat);
+                $stmtUpdateEtat->bindParam(':id_match', $matchData['id_match']);
+                $stmtUpdateEtat->execute();
+            }
+        }
+
+        return $result;
     }
 }

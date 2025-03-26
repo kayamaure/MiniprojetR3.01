@@ -22,26 +22,32 @@
         <a href="ajouter.php" class="btn btn-add">Ajouter un Joueur</a>
         <a href="../dashboard.php" class="btn btn-back">Retour</a>
         
-        <table id="joueurs-table">
-            <thead>
-                <tr>
-                    <th>Numéro Licence</th>
-                    <th>Nom</th>
-                    <th>Prénom</th>
-                    <th>Date de Naissance</th>
-                    <th>Taille</th>
-                    <th>Poids</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="joueurs-tbody">
-                <!-- Contenu généré dynamiquement par JavaScript -->
-                <tr>
-                    <td colspan="8" class="loading-message">Chargement des joueurs...</td>
-                </tr>
-            </tbody>
-        </table>
+        <div id="table-container">
+            <table id="joueurs-table">
+                <thead>
+                    <tr>
+                        <th>Numéro Licence</th>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Date de Naissance</th>
+                        <th>Taille</th>
+                        <th>Poids</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="joueurs-tbody">
+                    <!-- Contenu généré dynamiquement par JavaScript -->
+                    <tr>
+                        <td colspan="8" class="loading-message">Chargement des joueurs...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Message quand aucun joueur n'est disponible -->
+        <div id="no-data-message" style="display: none; margin-top: 20px;">
+            <p>Aucune donnée disponible. Veuillez ajouter des joueurs.</p>
+        </div>
     </div>
 
     <?php include '../../views/footer.php'; ?>
@@ -63,7 +69,8 @@
         async function fetchJoueurs() {
             try {
                 const token = localStorage.getItem('authToken');
-                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=joueurs', {
+                // Utilisation du routeur index.php au lieu d'appeler directement les contrôleurs
+                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=liste', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -77,13 +84,20 @@
                 }
                 
                 const tableBody = document.getElementById('joueurs-tbody');
+                const tableContainer = document.getElementById('table-container');
+                const noDataMessage = document.getElementById('no-data-message');
                 
-                // Vider le tableau existant
-                tableBody.innerHTML = '';
-                
-                // Remplir le tableau avec les données
-                if (data.length > 0) {
-                    data.forEach(joueur => {
+                // Vérifier si nous avons des joueurs
+                if (data.success && data.joueurs && data.joueurs.length > 0) {
+                    // Afficher le tableau et masquer le message "pas de données"
+                    tableContainer.style.display = 'block';
+                    noDataMessage.style.display = 'none';
+                    
+                    // Vider le tableau existant
+                    tableBody.innerHTML = '';
+                    
+                    // Remplir le tableau avec les données
+                    data.joueurs.forEach(joueur => {
                         const row = document.createElement('tr');
                         row.dataset.id = joueur.numero_licence;
                         
@@ -98,32 +112,35 @@
                             <td>
                                 <a href="modifier.php?numero_licence=${joueur.numero_licence}" class="btn btn-edit">Modifier</a>
                                 <a href="#" class="btn btn-delete" onclick="deleteJoueur('${joueur.numero_licence}'); return false;">Supprimer</a>
-                                <a href="../commentaires/ajouter.php?numero_licence=${joueur.numero_licence}" class="btn btn-add">Ajouter Commentaire</a>
+                                <a href="../commentaires/ajouter.php?numero_licence=${joueur.numero_licence}" class="btn btn-add-commentaire">Ajouter Commentaire</a>
                             </td>
                         `;
-                        
                         tableBody.appendChild(row);
                     });
                 } else {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td colspan="8" class="no-data">Aucun joueur trouvé.</td>`;
-                    tableBody.appendChild(row);
+                    // Masquer le tableau et afficher le message "pas de données"
+                    tableContainer.style.display = 'none';
+                    noDataMessage.style.display = 'block';
                 }
             } catch (error) {
-                console.error('Error fetching joueurs:', error);
+                console.error('Erreur:', error);
                 document.getElementById('error-message').textContent = 'Erreur lors de la récupération des joueurs.';
+                
+                // En cas d'erreur, masquer le tableau et afficher le message
+                document.getElementById('table-container').style.display = 'none';
+                document.getElementById('no-data-message').style.display = 'block';
             }
         }
         
         // Fonction pour supprimer un joueur
         async function deleteJoueur(numeroLicence) {
-            if (!confirm('Voulez-vous vraiment supprimer ce joueur ?')) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
                 return;
             }
             
             try {
                 const token = localStorage.getItem('authToken');
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=supprimer_joueur&numero_licence=${numeroLicence}`, {
+                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=supprimer&numero_licence=${numeroLicence}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -133,13 +150,13 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Rafraîchir la liste des joueurs
+                    // Actualiser la liste des joueurs
                     fetchJoueurs();
                 } else {
-                    document.getElementById('error-message').textContent = data.error || 'Erreur lors de la suppression du joueur.';
+                    document.getElementById('error-message').textContent = data.error || 'Erreur lors de la suppression.';
                 }
             } catch (error) {
-                console.error('Error deleting joueur:', error);
+                console.error('Erreur:', error);
                 document.getElementById('error-message').textContent = 'Erreur lors de la suppression du joueur.';
             }
         }

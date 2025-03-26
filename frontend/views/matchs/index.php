@@ -23,11 +23,14 @@
             <a href="index.php?filter=passes" class="btn-add-match">Matchs passés</a>
         </div>
         
-        <a href="ajouter.php" class="btn-add-match">Ajouter un Match</a>
-        <a href="../dashboard.php" class="btn btn-back">Retour</a>
+        <div class="action-buttons">
+            <a href="ajouter.php" class="btn-add-match">Ajouter un Match</a>
+            <a href="../dashboard.php" class="btn btn-back">Retour</a>
+        </div>
 
-        <?php if (!empty($matchs)) : ?>
-            <table id="matchs-table">
+        <div id="matchs-container">
+            <p id="no-match-message" class="no-data">Aucun match trouvé.</p>
+            <table id="matchs-table" style="display: none;">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -36,34 +39,15 @@
                         <th>Lieu</th>
                         <th>Équipe adverse</th>
                         <th>Statut</th>
-                        <th>État Feuille</th>
                         <th>Résultat</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="matchs-tbody">
-                    <?php foreach ($matchs as $match) : ?>
-                        <tr>
-                            <td><?= htmlspecialchars($match['id_match']); ?></td>
-                            <td><?= htmlspecialchars($match['date_match']); ?></td>
-                            <td><?= htmlspecialchars($match['heure_match']); ?></td>
-                            <td><?= htmlspecialchars($match['lieu_de_rencontre']); ?></td>
-                            <td><?= htmlspecialchars($match['nom_equipe_adverse']); ?></td>
-                            <td><?= htmlspecialchars($match['statut']); ?></td>
-                            <td><?= htmlspecialchars($match['etat_feuille']); ?></td>
-                            <td><?= $match['statut'] === 'Terminé' ? htmlspecialchars($match['resultat']) : 'N/A'; ?></td>
-                            <td class="action-buttons">
-                                <a href="../controllers/FeuilleMatchController.php?action=afficher&id_match=<?= $match['id_match']; ?>" class="btn btn-add">Feuille du match</a>
-                                <a href="../controllers/MatchsController.php?action=modifier&id_match=<?= $match['id_match']; ?>" class="btn btn-edit">Modifier</a>
-                                <a href="../controllers/MatchsController.php?action=supprimer&id_match=<?= $match['id_match']; ?>" class="btn btn-delete">Supprimer</a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
+                    <!-- Le contenu sera généré dynamiquement par JavaScript -->
                 </tbody>
             </table>
-        <?php else : ?>
-            <p class="no-data">Aucun match trouvé.</p>
-        <?php endif; ?>
+        </div>
     </div>
 
     <?php include '../../views/footer.php'; ?>
@@ -96,49 +80,53 @@
                 });
                 
                 const data = await response.json();
+                // console.log('Données reçues de l\'API:', data); // Pour debugging
                 
-                if (data.error) {
-                    document.getElementById('error-message').textContent = data.error;
-                    return;
-                }
-                
+                // Récupérer les éléments du DOM
                 const tableBody = document.getElementById('matchs-tbody');
+                const table = document.getElementById('matchs-table');
+                const noMatchMessage = document.getElementById('no-match-message');
                 
                 // Vider le tableau existant
                 tableBody.innerHTML = '';
                 
-                // Remplir le tableau avec les données
-                if (data.length > 0) {
+                // Vérifier si nous avons des données
+                if (data && data.length > 0) {
+                    // Afficher le tableau, masquer le message "aucun match"
+                    table.style.display = 'table';
+                    noMatchMessage.style.display = 'none';
+                    
+                    // Remplir le tableau avec les données
                     data.forEach(match => {
                         const row = document.createElement('tr');
-                        row.dataset.id = match.id_match;
                         
-                        // Formatter le score
-                        let scoreDisplay = 'Non joué';
-                        if (match.score_equipe !== null && match.score_adversaire !== null) {
-                            scoreDisplay = `${match.score_equipe} - ${match.score_adversaire}`;
+                        // Déterminer le résultat à afficher
+                        let resultatDisplay = 'Non disponible';
+                        if (match.statut === 'Terminé' && match.resultat) {
+                            resultatDisplay = match.resultat;
                         }
                         
                         row.innerHTML = `
                             <td>${match.id_match}</td>
                             <td>${match.date_match}</td>
                             <td>${match.heure_match}</td>
-                            <td>${match.lieu_match}</td>
-                            <td>${match.nom_adversaire}</td>
-                            <td>${scoreDisplay}</td>
-                            <td>
+                            <td>${match.lieu_de_rencontre}</td>
+                            <td>${match.nom_equipe_adverse}</td>
+                            <td>${match.statut}</td>
+                            <td>${resultatDisplay}</td>
+                            <td class="action-buttons">
+                                <a href="../feuilles_matchs/index.php?id_match=${match.id_match}" class="btn btn-add">Feuille du match</a>
                                 <a href="modifier.php?id_match=${match.id_match}" class="btn btn-edit">Modifier</a>
-                                <a href="#" class="btn btn-delete" onclick="deleteMatch('${match.id_match}'); return false;">Supprimer</a>
-                                <a href="../statistiques/saisir.php?id_match=${match.id_match}" class="btn btn-stats">Saisir Stats</a>
+                                <button class="btn btn-delete" onclick="deleteMatch(${match.id_match})">Supprimer</button>
                             </td>
                         `;
                         
                         tableBody.appendChild(row);
                     });
                 } else {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td colspan="7" class="no-data">Aucun match trouvé.</td>`;
-                    tableBody.appendChild(row);
+                    // Masquer le tableau, afficher le message "aucun match"
+                    table.style.display = 'none';
+                    noMatchMessage.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error fetching matchs:', error);
