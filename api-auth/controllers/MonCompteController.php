@@ -1,45 +1,67 @@
 <?php
-// MonCompteController.php for API authentication (get account info)
+// Contrôleur de gestion du compte utilisateur
 header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+// Vérification de la méthode HTTP
+if ($_SERVER["REQUEST_METHOD"] !== "GET") {
+    http_response_code(405);
+    echo json_encode(["error" => "Méthode non autorisée"]);
+    exit();
+}
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/Utilisateur.php';
-require_once __DIR__ . '/../jwt_helper.php';
 
-// Get headers
-$headers = getallheaders();
+// Récupération du token dans l'en-tête Authorization
+$headers = apache_request_headers();
 if (!isset($headers['Authorization'])) {
-    echo json_encode(["error" => "Authorization header missing."]);
+    http_response_code(401);
+    echo json_encode(["error" => "En-tête d'autorisation manquant"]);
     exit();
 }
 
-$authHeader = $headers['Authorization'];
-// Expected format: Bearer <token>
-if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-    $token = $matches[1];
-} else {
-    echo json_encode(["error" => "Invalid Authorization header format."]);
+$auth_header = $headers['Authorization'];
+if (!preg_match('/Bearer\s(\S+)/', $auth_header, $matches)) {
+    http_response_code(401);
+    echo json_encode(["error" => "Format de l'en-tête d'autorisation invalide"]);
     exit();
 }
 
-$secret = "123Top@Bruh"; // Use the same secret as in ConnexionController.php
-$payload = verify_jwt($token, $secret);
-if (!$payload) {
-    echo json_encode(["error" => "Invalid or expired token."]);
-    exit();
-}
+$token = $matches[1];
 
-$userId = $payload['id_utilisateur'];
+try {
+    $database = new Database();
+    $db = $database->getConnection();
+    $utilisateur = new Utilisateur($db);
 
-$database = new Database();
-$db = $database->getConnection();
+    // Vérification du token
+    $token_info = $utilisateur->verifierToken($token);
+    if (!$token_info) {
+        http_response_code(401);
+        echo json_encode(["error" => "Token invalide ou expiré"]);
+        exit();
+    }
 
-$utilisateur = new Utilisateur($db);
-$userInfo = $utilisateur->getUtilisateurParId($userId);
-
-if ($userInfo) {
-    echo json_encode(["success" => true, "user" => $userInfo]);
-} else {
-    echo json_encode(["error" => "User not found."]);
+    // Récupération des informations de l'utilisateur
+    $user_info = $utilisateur->getUtilisateurParId($token_info['id_utilisateur']);
+    if ($user_info) {
+        // On ne renvoie pas le mot de passe
+        unset($user_info['mot_de_passe']);
+        
+        http_response_code(200);
+        echo json_encode([
+            "success" => true,
+            "user" => $user_info
+        ]);
+    } else {
+        http_response_code(404);
+        echo json_encode(["error" => "Utilisateur non trouvé"]);
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(["error" => "Erreur serveur: " . $e->getMessage()]);
 }
 ?>

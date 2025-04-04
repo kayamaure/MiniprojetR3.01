@@ -1,7 +1,7 @@
 <?php
 class Database {
     private $host = '127.0.0.1'; // Utiliser l'adresse IP directe au lieu de 'localhost'
-    private $db_name = 'evalsport_gestion_equipe_football';
+    private $db_name = 'evalsport_users';
     private $username = 'root';
     private $password = '';  
     public $conn;

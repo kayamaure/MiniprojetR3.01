@@ -1,7 +1,7 @@
 <?php
 class Database {
     private $host = 'localhost'; 
-    private $db_name = 'evalsport_gestion_equipe_football';
+    private $db_name = 'evalsport_equipe_football';
     private $username = 'root';
     private $password = '';  
     public $conn;

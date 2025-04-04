@@ -1,6 +1,6 @@
 <?php
 // connexion.php (in frontend/views)
-// We no longer use sessions here because authentication is handled via the API.
+// L'authentification est gérée via l'API avec des tokens
 include 'header.php';
 ?>
 <!DOCTYPE html>
@@ -8,7 +8,6 @@ include 'header.php';
 <head>
     <meta charset="UTF-8">
     <title>Connexion</title>
-    <!-- Updated path for the stylesheet -->
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
         .loader {
@@ -26,16 +25,29 @@ include 'header.php';
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .error-message {
+            color: red;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: rgba(255, 0, 0, 0.1);
+            display: none;
+        }
+
+        .info-message {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Connexion</h2>
 
-        <!-- Container for displaying error messages -->
-        <div id="error-message" style="color: red;"></div>
+        <div id="error-message" class="error-message"></div>
 
-        <!-- Login form -->
         <form id="login-form">
             <label for="nom_utilisateur">Nom d'utilisateur :</label>
             <input type="text" name="nom_utilisateur" id="nom_utilisateur" required>
@@ -44,25 +56,60 @@ include 'header.php';
             <input type="password" name="mot_de_passe" id="mot_de_passe" required>
 
             <button type="submit" class="btn-submit">Se connecter</button>
-            
-            <!-- Indicateur de chargement -->
             <div class="loader" id="loader"></div>
+            <p class="info-message">Note : La session expirera automatiquement après 15 minutes d'inactivité.</p>
         </form>
 
-        <!-- Link to registration page -->
         <p class="create-account-container">
             Pas encore de compte ? <a href="inscription.php" class="btn btn-create-compte">Créer un compte</a>
         </p>
     </div>
 
+    <!-- Inclusion du gestionnaire d'authentification -->
+    <script src="../assets/js/auth.js"></script>
     <script>
-        // Attach a submit event listener to the login form
+        // Vérification de la connexion au chargement de la page
+        if (authManager.isLoggedIn()) {
+            window.location.href = 'dashboard.php';
+        }
+
         document.getElementById('login-form').addEventListener('submit', async function(e) {
-            e.preventDefault(); // Prevent the default form submission
+            e.preventDefault();
             
-            // Afficher l'indicateur de chargement
+            const errorElement = document.getElementById('error-message');
             const loader = document.getElementById('loader');
+            errorElement.style.display = 'none';
             loader.style.display = 'block';
+
+            try {
+                const formData = new FormData(this);
+                const userData = Object.fromEntries(formData.entries());
+
+                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-auth/index.php?action=login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Sauvegarde du token avec expiration après 15 minutes
+                    authManager.setToken(data.token);
+                    window.location.href = 'dashboard.php';
+                } else {
+                    errorElement.textContent = data.error || 'Erreur lors de la connexion';
+                    errorElement.style.display = 'block';
+                }
+            } catch (error) {
+                errorElement.textContent = 'Erreur de connexion au serveur';
+                errorElement.style.display = 'block';
+                console.error('Erreur:', error);
+            } finally {
+                loader.style.display = 'none';
+            }
             
             // Masquer les messages d'erreur précédents
             document.getElementById('error-message').innerText = '';

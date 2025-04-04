@@ -1,13 +1,85 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
-// Modèle Utilisateur
 
 class Utilisateur {
     private $conn;
     private $table_name = "utilisateur";
+    private $table_tokens = "tokens";
 
     public function __construct($db) {
         $this->conn = $db;
+    }
+
+    // Crée un nouveau token JWT pour l'utilisateur
+    public function creerToken($id_utilisateur) {
+        // Supprime les anciens tokens expirés
+        $this->nettoyerTokensExpires();
+
+        // Création du token avec expiration après 15 minutes
+        $token = $this->genererToken();
+        $date_expiration = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+        $query = "INSERT INTO " . $this->table_tokens . "
+                 (id_utilisateur, token, date_expiration)
+                 VALUES (:id_utilisateur, :token, :date_expiration)";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_utilisateur', $id_utilisateur, PDO::PARAM_INT);
+        $stmt->bindParam(':token', $token, PDO::PARAM_STR);
+        $stmt->bindParam(':date_expiration', $date_expiration, PDO::PARAM_STR);
+
+        if($stmt->execute()) {
+            return $token;
+        }
+        return false;
+    }
+
+    // Vérifie si un token est valide
+    public function verifierToken($token) {
+        $query = "SELECT t.*, u.nom_utilisateur 
+                 FROM " . $this->table_tokens . " t
+                 JOIN " . $this->table_name . " u ON t.id_utilisateur = u.id_utilisateur
+                 WHERE t.token = :token
+                 AND t.date_expiration > NOW()
+                 LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':token', $token, PDO::PARAM_STR);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Nettoie les tokens expirés
+    private function nettoyerTokensExpires() {
+        $query = "DELETE FROM " . $this->table_tokens . " WHERE date_expiration < NOW()";
+        $this->conn->exec($query);
+    }
+
+    // Génère un token unique
+    private function genererToken() {
+        return bin2hex(random_bytes(32));
+    }
+
+    // Invalide un token en le supprimant de la base de données
+    public function invaliderToken($token) {
+        $query = "DELETE FROM " . $this->table_tokens . "
+                 WHERE token = :token";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':token', $token, PDO::PARAM_STR);
+        return $stmt->execute();
+    }
+
+    // Met à jour la date de dernière connexion
+    public function mettreAJourDerniereConnexion($id_utilisateur) {
+        $query = "UPDATE " . $this->table_name . "
+                 SET derniere_connexion = NOW()
+                 WHERE id_utilisateur = :id_utilisateur";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_utilisateur', $id_utilisateur, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 
     
