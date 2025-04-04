@@ -127,8 +127,8 @@
                 document.getElementById('id_match').value = data.id_match;
                 document.getElementById('date_match').value = data.date_match;
                 document.getElementById('heure_match').value = data.heure_match;
-                document.getElementById('lieu_match').value = data.lieu_match;
-                document.getElementById('nom_adversaire').value = data.nom_adversaire;
+                document.getElementById('lieu_match').value = data.lieu_de_rencontre;
+                document.getElementById('nom_adversaire').value = data.nom_equipe_adverse;
                 
                 // Vérifier si le match est dans le passé
                 const matchDate = new Date(data.date_match + 'T' + data.heure_match);
@@ -158,7 +158,18 @@
                     
                     // Convertir FormData en objet
                     for (const [key, value] of formData.entries()) {
-                        matchData[key] = value;
+                        // Mapper les noms de champs du formulaire vers les noms de champs de l'API
+                        if (key === 'lieu_match') {
+                            matchData['lieu_de_rencontre'] = value;
+                        } else if (key === 'nom_adversaire') {
+                            matchData['nom_equipe_adverse'] = value;
+                        } else if (key === 'score_equipe') {
+                            matchData['score_domicile'] = value;
+                        } else if (key === 'score_adversaire') {
+                            matchData['score_exterieur'] = value;
+                        } else {
+                            matchData[key] = value;
+                        }
                     }
                     
                     const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=modifier_match', {

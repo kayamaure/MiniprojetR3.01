@@ -189,8 +189,8 @@
             players.forEach(joueur => {
                 html += `
                     <tr>
-                        <td>${joueur.nom || 'N/A'}</td>
-                        <td>${joueur.prenom || 'N/A'}</td>
+                        <td>${joueur.nom_joueur || 'N/A'}</td>
+                        <td>${joueur.prenom_joueur || 'N/A'}</td>
                         <td>${joueur.poste || 'N/A'}</td>
                     </tr>
                 `;

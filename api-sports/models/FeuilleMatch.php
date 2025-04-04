@@ -172,24 +172,22 @@ class FeuilleMatch
     public function mettreAJourEvaluation($data)
     {
         // Vérifier si les données sont présentes
-        if (empty($data) || !isset($data['evaluation'], $data['numero_licence'], $data['id_match'])) {
-            throw new Exception("Les données nécessaires à la mise à jour de l'évaluation sont incomplètes.");
+        if (empty($data['id_selection']) || !isset($data['evaluation'])) {
+            return false;
         }
 
         // Préparer la requête pour mettre à jour l'évaluation
-        $query = "UPDATE " . $this->table . " 
-                  SET evaluation = :evaluation 
-                  WHERE numero_licence = :numero_licence AND id_match = :id_match";
+        $query = "UPDATE " . $this->table . " SET evaluation = :evaluation WHERE id = :id_selection";
         $stmt = $this->conn->prepare($query);
 
+        // Bind des paramètres
         $stmt->bindParam(':evaluation', $data['evaluation'], PDO::PARAM_INT);
-        $stmt->bindParam(':numero_licence', $data['numero_licence'], PDO::PARAM_STR);
-        $stmt->bindParam(':id_match', $data['id_match'], PDO::PARAM_INT);
+        $stmt->bindParam(':id_selection', $data['id_selection'], PDO::PARAM_INT);
 
         $result = $stmt->execute();
 
-        // Si la mise à jour réussit, mettre à jour l'état de la feuille de match
-        if ($result) {
+        // Si la mise à jour réussit, mettre à jour l'état de la feuille de match si l'id_match est fourni
+        if ($result && isset($data['id_match'])) {
             $queryUpdateEtat = "UPDATE match_ SET etat_feuille = 'Non validé' WHERE id_match = :id_match";
             $stmtUpdateEtat = $this->conn->prepare($queryUpdateEtat);
             $stmtUpdateEtat->bindParam(':id_match', $data['id_match'], PDO::PARAM_INT);

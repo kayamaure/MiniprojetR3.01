@@ -48,6 +48,19 @@
             opacity: 0.4;
         }
         
+        /* Ajout de styles pour rendre les étoiles visibles par défaut */
+        .rating > label:after {
+            content: "\2606"; /* Caractère étoile non remplie */
+            color: #FFD700;
+            position: absolute;
+            left: 0;
+        }
+        
+        .rating > input:checked ~ label:after {
+            content: "\2605"; /* Caractère étoile remplie quand sélectionnée */
+            color: #FFD700;
+        }
+        
         .player-evaluation {
             margin-bottom: 20px;
             padding: 15px;
@@ -197,11 +210,12 @@
             
             players.forEach(joueur => {
                 const formId = `form-${joueur.id_selection}`;
-                const noteValue = joueur.note_joueur ? joueur.note_joueur : 0;
+                // Utiliser note au lieu de note_joueur et définir une valeur par défaut à 1
+                const noteValue = joueur.note || 1;
                 
                 html += `
                     <div class="player-evaluation">
-                        <h3>${joueur.nom} ${joueur.prenom} - ${joueur.poste}</h3>
+                        <h3>${joueur.nom_joueur || 'N/A'} ${joueur.prenom_joueur || 'N/A'} - ${joueur.poste || 'N/A'}</h3>
                         <form class="evaluation-form" id="${formId}">
                             <input type="hidden" name="id_selection" value="${joueur.id_selection}">
                             <input type="hidden" name="id_match" value="${idMatch}">
@@ -219,9 +233,10 @@
                                 <input type="radio" id="star2-${joueur.id_selection}" name="note" value="2" ${noteValue == 2 ? 'checked' : ''} />
                                 <label for="star2-${joueur.id_selection}" title="2 étoiles"></label>
                                 
-                                <input type="radio" id="star1-${joueur.id_selection}" name="note" value="1" ${noteValue == 1 ? 'checked' : ''} />
+                                <input type="radio" id="star1-${joueur.id_selection}" name="note" value="1" ${noteValue == 1 ? 'checked' : 'checked'} />
                                 <label for="star1-${joueur.id_selection}" title="1 étoile"></label>
                             </div>
+                            <input type="hidden" name="commentaire" value="" />
                             
                             <div style="margin-top: 10px;">
                                 <button type="submit" class="btn btn-edit">Enregistrer l'évaluation</button>

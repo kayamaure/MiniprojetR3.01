@@ -25,10 +25,13 @@ switch ($action) {
     case "ajouter_match":
     case "modifier_match":
     case "supprimer_match":
-        require_once "controllers/MatchsController.php"; // Corrigé: MatchsController au lieu de MatchController
+    case "feuille_match": 
+    case "valider_feuille": 
+    case "evaluer": 
+    case "match": // Ajout de cette action pour récupérer un match spécifique
+        require_once "controllers/MatchsController.php";
         break;
         
-    case "feuille_match":
     case "ajouter_feuille":
     case "modifier_feuille":
     case "supprimer_feuille":

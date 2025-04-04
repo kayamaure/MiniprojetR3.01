@@ -70,6 +70,26 @@ switch ($action) {
         echo json_encode($matchs);
         break;
 
+    case 'match':
+        // Action pour récupérer les détails d'un match spécifique
+        $id_match = $_GET['id_match'] ?? null;
+        if (!$id_match) {
+            echo json_encode(['error' => 'ID du match non spécifié']);
+            break;
+        }
+        
+        // Récupérer les détails du match
+        $match = $gameMatch->obtenirMatch($id_match);
+        
+        if (!$match) {
+            echo json_encode(['error' => 'Match non trouvé']);
+            break;
+        }
+        
+        // Si on a trouvé le match, renvoyer ses informations
+        echo json_encode($match);
+        break;
+
     case 'feuille_match':
         // Gestion de l'affichage des détails d'une feuille de match
         $id_match = $_GET['id_match'] ?? null;
@@ -248,6 +268,61 @@ switch ($action) {
             echo json_encode(['success' => true, 'message' => 'Feuille de match validée avec succès']);
         } else {
             echo json_encode(['success' => false, 'error' => 'Erreur lors de la validation de la feuille de match']);
+        }
+        break;
+
+    case 'evaluer':
+        // Gestion de l'évaluation des joueurs d'un match
+        $id_match = $_GET['id_match'] ?? null;
+        if (!$id_match) {
+            echo json_encode(['success' => false, 'error' => 'ID du match non spécifié']);
+            break;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Récupérer les détails du match
+            $match = $gameMatch->obtenirMatch($id_match);
+            
+            // Récupérer tous les joueurs sélectionnés pour le match
+            $joueursSelectionnes = $feuilleMatch->obtenirJoueursSelectionnes($id_match);
+            
+            // Retourner le tout au format JSON
+            echo json_encode([
+                'success' => true,
+                'match' => $match,
+                'joueursSelectionnes' => $joueursSelectionnes
+            ]);
+        } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Mise à jour de l'évaluation d'un joueur
+            // Récupérer les données JSON envoyées
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+            
+            if (!$data) {
+                // Si les données ne sont pas en JSON, utiliser $_POST
+                $data = $_POST;
+            }
+            
+            if (empty($data['id_selection']) || !isset($data['note'])) {
+                echo json_encode(['success' => false, 'error' => 'Données manquantes']);
+                break;
+            }
+            
+            // Mettre à jour l'évaluation
+            $result = $feuilleMatch->mettreAJourEvaluation([
+                'id_selection' => $data['id_selection'],
+                'numero_licence' => null, // On n'a pas cette donnée, mais on peut l'obtenir par l'id_selection
+                'id_match' => $data['id_match'],
+                'evaluation' => $data['note']
+            ]);
+            
+            if ($result) {
+                echo json_encode(['success' => true, 'message' => 'Évaluation enregistrée avec succès']);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Erreur lors de l\'enregistrement de l\'évaluation']);
+            }
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Méthode non autorisée']);
         }
         break;
 
