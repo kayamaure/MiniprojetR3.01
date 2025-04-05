@@ -13,7 +13,7 @@ class Joueur
     }
 
     // Obtenir tous les joueurs
-    public function obtenirTousLesJoueurs()
+    public function getAll()
     {
         $query = "SELECT * FROM " . $this->table_name;
         $stmt = $this->conn->prepare($query);
@@ -21,8 +21,18 @@ class Joueur
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Obtenir un joueur par son ID
+    public function getById($id)
+    {
+        $query = "SELECT * FROM " . $this->table_name . " WHERE numero_licence = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     // Ajouter un joueur
-    public function ajouterJoueur($data)
+    public function create($data)
     {
         $query = "INSERT INTO " . $this->table_name . " (numero_licence, nom, prenom, date_naissance, taille, poids, statut) 
                   VALUES (:numero_licence, :nom, :prenom, :date_naissance, :taille, :poids, :statut)";
@@ -40,7 +50,7 @@ class Joueur
     }
 
     // Mettre à jour un joueur
-    public function mettreAJourJoueur($data)
+    public function update($data)
     {
         $query = "UPDATE " . $this->table_name . " 
                   SET nom = :nom, prenom = :prenom, date_naissance = :date_naissance, taille = :taille, poids = :poids, statut = :statut
@@ -59,12 +69,11 @@ class Joueur
     }
 
     // Supprimer un joueur
-    public function supprimerJoueur($numero_licence)
+    public function delete($id)
     {
-        $query = "DELETE FROM " . $this->table_name . " WHERE numero_licence = :numero_licence";
+        $query = "DELETE FROM " . $this->table_name . " WHERE numero_licence = :id";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":numero_licence", $numero_licence);
-
+        $stmt->bindParam(":id", $id);
         return $stmt->execute();
     }
 

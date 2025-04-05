@@ -12,42 +12,86 @@ class MatchController {
         $this->match = new GameMatch($this->db);
     }
 
-    // GET - Obtenir tous les matchs
-    public function index() {
+    public function handleRequest() {
+        $method = $_SERVER['REQUEST_METHOD'];
+        
+        switch ($method) {
+            case 'GET':
+                if (isset($_GET['id'])) {
+                    $this->getMatch($_GET['id']);
+                } else {
+                    $this->getMatches();
+                }
+                break;
+
+            case 'POST':
+                $this->createMatch();
+                break;
+
+            case 'PUT':
+                $this->updateMatch();
+                break;
+
+            case 'DELETE':
+                if (!isset($_GET['id'])) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "ID du match non fourni"]);
+                    return;
+                }
+                $this->deleteMatch($_GET['id']);
+                break;
+
+            default:
+                http_response_code(405);
+                echo json_encode(["error" => "Méthode non autorisée"]);
+                break;
+        }
+    }
+
+    private function getMatches() {
         try {
             if (isset($_GET['statut'])) {
-                $matchs = $this->match->obtenirMatchsParStatut($_GET['statut']);
+                $matches = $this->match->getByStatus($_GET['statut']);
             } else {
-                $matchs = $this->match->obtenirTousLesMatchs();
+                $matches = $this->match->getAll();
             }
             
-            http_response_code(200);
-            echo json_encode(['success' => true, 'data' => $matchs]);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération des matchs']);
-        }
-    }
-
-    // GET - Obtenir un match par son ID
-    public function show($id_match) {
-        try {
-            $match = $this->match->obtenirMatch($id_match);
-            if ($match) {
-                http_response_code(200);
-                echo json_encode(['success' => true, 'data' => $match]);
+            if ($matches) {
+                echo json_encode(["success" => true, "data" => $matches]);
             } else {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Match non trouvé']);
+                echo json_encode(["error" => "Aucun match trouvé"]);
             }
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Erreur lors de la récupération du match']);
+            echo json_encode(["error" => "Erreur lors de la récupération des matchs"]);
         }
     }
 
-    // POST - Créer un nouveau match
-    public function create() {
+    private function getMatch($id) {
+        try {
+            $match = $this->match->getById($id);
+            if ($match) {
+                echo json_encode(["success" => true, "data" => $match]);
+            } else {
+                http_response_code(404);
+                echo json_encode(["error" => "Match non trouvé"]);
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Erreur lors de la récupération du match"]);
+        }
+    }
+
+    private function createMatch() {
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$this->validateMatchData($data)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Données incomplètes ou invalides"]);
+            return;
+        }
+
         try {
             $data = json_decode(file_get_contents("php://input"), true);
             
@@ -58,7 +102,7 @@ class MatchController {
                 return;
             }
 
-            if ($this->match->ajouterMatch($data)) {
+            if ($this->match->create($data)) {
                 http_response_code(201);
                 echo json_encode(['success' => true, 'message' => 'Match créé avec succès']);
             } else {
@@ -71,11 +115,24 @@ class MatchController {
         }
     }
 
-    // PUT - Mettre à jour un match
-    public function update($id_match) {
+    private function updateMatch() {
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!isset($data['id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "ID du match non fourni"]);
+            return;
+        }
+
+        if (!$this->validateMatchData($data)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Données incomplètes ou invalides"]);
+            return;
+        }
+
         try {
             $data = json_decode(file_get_contents("php://input"), true);
-            $data['id_match'] = $id_match;
+            $id_match = $data['id'];
 
             // Validation des données
             if (!$this->validateMatchData($data)) {
@@ -84,7 +141,7 @@ class MatchController {
                 return;
             }
 
-            if ($this->match->mettreAJourMatch($data)) {
+            if ($this->match->update($data)) {
                 http_response_code(200);
                 echo json_encode(['success' => true, 'message' => 'Match mis à jour avec succès']);
             } else {
@@ -97,10 +154,9 @@ class MatchController {
         }
     }
 
-    // DELETE - Supprimer un match
-    public function delete($id_match) {
+    private function deleteMatch($id) {
         try {
-            if ($this->match->supprimerMatch($id_match)) {
+            if ($this->match->delete($id)) {
                 http_response_code(200);
                 echo json_encode(['success' => true, 'message' => 'Match supprimé avec succès']);
             } else {

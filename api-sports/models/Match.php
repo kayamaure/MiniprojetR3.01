@@ -10,7 +10,7 @@ class GameMatch
         $this->conn = $db;
     }
     // Récupérer tous les matchs
-    public function obtenirTousLesMatchs()
+    public function getAll()
     {
         $query = "SELECT * FROM " . $this->table;
         $stmt = $this->conn->prepare($query);
@@ -18,8 +18,18 @@ class GameMatch
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Récupérer les matchs par statut
+    public function getByStatus($statut)
+    {
+        $query = "SELECT * FROM " . $this->table . " WHERE statut = :statut";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':statut', $statut);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // Ajouter un match
-    public function ajouterMatch($data)
+    public function create($data)
     {
         $statut = (strtotime($data['date_match'] . ' ' . $data['heure_match']) > time()) ? 'À venir' : 'Terminé';
 
@@ -37,17 +47,17 @@ class GameMatch
     }
 
     // Récuperer un match
-    public function obtenirMatch($id_match)
+    public function getById($id)
     {
         $query = "SELECT * FROM " . $this->table . " WHERE id_match = :id_match";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_match', $id_match);
+        $stmt->bindParam(':id_match', $id);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     // MAJ d'un match
-    public function mettreAJourMatch($data)
+    public function update($data)
     {
         $statut = (strtotime($data['date_match'] . ' ' . $data['heure_match']) > time()) ? 'À venir' : 'Terminé';
 
@@ -78,22 +88,14 @@ class GameMatch
         return $stmt->execute();
     }
 
-    // Obtenir les matchs par status (A venir ou terminé)
-    public function obtenirMatchsParStatut($statut)
-    {
-        $query = "SELECT * FROM " . $this->table . " WHERE statut = :statut";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':statut', $statut);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
 
-    // Suppression d'un match
-    public function supprimerMatch($id_match)
+
+    // Supprimer un match
+    public function delete($id)
     {
         $query = "DELETE FROM " . $this->table . " WHERE id_match = :id_match";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id_match', $id_match);
+        $stmt->bindParam(':id_match', $id);
         return $stmt->execute();
     }
 
