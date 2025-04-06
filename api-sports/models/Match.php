@@ -10,7 +10,7 @@ class GameMatch
         $this->conn = $db;
     }
     // Récupérer tous les matchs
-    public function getAll()
+    public function obtenirTousLesMatchs()
     {
         $query = "SELECT * FROM " . $this->table;
         $stmt = $this->conn->prepare($query);
@@ -19,7 +19,7 @@ class GameMatch
     }
 
     // Récupérer les matchs par statut
-    public function getByStatus($statut)
+    public function obtenirMatchsParStatut($statut)
     {
         $query = "SELECT * FROM " . $this->table . " WHERE statut = :statut";
         $stmt = $this->conn->prepare($query);
@@ -29,7 +29,7 @@ class GameMatch
     }
 
     // Ajouter un match
-    public function create($data)
+    public function ajouterMatch($data)
     {
         $statut = (strtotime($data['date_match'] . ' ' . $data['heure_match']) > time()) ? 'À venir' : 'Terminé';
 
@@ -47,7 +47,7 @@ class GameMatch
     }
 
     // Récuperer un match
-    public function getById($id)
+    public function obtenirMatch($id)
     {
         $query = "SELECT * FROM " . $this->table . " WHERE id_match = :id_match";
         $stmt = $this->conn->prepare($query);
@@ -57,7 +57,7 @@ class GameMatch
     }
 
     // MAJ d'un match
-    public function update($data)
+    public function mettreAJourMatch($data)
     {
         $statut = (strtotime($data['date_match'] . ' ' . $data['heure_match']) > time()) ? 'À venir' : 'Terminé';
 
@@ -91,7 +91,7 @@ class GameMatch
 
 
     // Supprimer un match
-    public function delete($id)
+    public function supprimerMatch($id)
     {
         $query = "DELETE FROM " . $this->table . " WHERE id_match = :id_match";
         $stmt = $this->conn->prepare($query);

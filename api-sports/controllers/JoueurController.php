@@ -57,8 +57,8 @@ switch ($action) {
     case 'modifier':
         // Modifying a player: expect a POST request with JSON data.
         // The player's numero_licence is passed as a GET parameter.
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(["error" => "Invalid request method. Use POST for modification."]);
+        if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
+            echo json_encode(["error" => "Invalid request method. Use PUT for modification."]);
             exit;
         }
         $numero_licence = $_GET['numero_licence'] ?? null;

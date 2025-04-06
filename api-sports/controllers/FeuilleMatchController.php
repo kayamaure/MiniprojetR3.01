@@ -1,258 +1,54 @@
 <?php
+// FeuilleMatchController.php for API (api-sports)
+// This controller handles actions for match sheets (feuilles de match) via JSON API
+
+header("Content-Type: application/json");
+
+// Use JSON input for POST methods
+$inputData = json_decode(file_get_contents("php://input"), true);
+
+// Include required model and configuration files using absolute paths
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/FeuilleMatch.php';
-require_once __DIR__ . '/../models/Match.php';
+require_once __DIR__ . '/../models/Match.php';      // Assume GameMatch is defined here
 require_once __DIR__ . '/../models/Joueur.php';
 require_once __DIR__ . '/../models/Commentaire.php';
 require_once __DIR__ . '/../models/Participer.php';
-require_once __DIR__ . '/../config/database.php';
 
-class FeuilleMatchController {
-    private $feuilleMatch;
-    private $match;
-    private $commentaire;
-    private $db;
+// Create database connection and instantiate the models
+$database = new Database();
+$db = $database->getConnection();
+$feuilleMatch = new FeuilleMatch($db);
+$commentaireModel = new Commentaire($db);
 
-    public function __construct() {
-        $database = new Database();
-        $this->db = $database->getConnection();
-        $this->feuilleMatch = new FeuilleMatch($this->db);
-        $this->match = new GameMatch($this->db);
-        $this->commentaire = new Commentaire($this->db);
-    }
+// Get the requested action from the GET parameters; default to "afficher"
+$action = $_GET['action'] ?? 'afficher';
 
-    public function handleRequest() {
-        $method = $_SERVER['REQUEST_METHOD'];
-        
-        switch ($method) {
-            case 'GET':
-                if (isset($_GET['id'])) {
-                    $this->getFeuilleMatch($_GET['id']);
-                } else {
-                    $this->getFeuillesMatch();
-                }
-                break;
+switch ($action) {
 
-            case 'POST':
-                $this->createFeuilleMatch();
-                break;
-
-            case 'PUT':
-                $this->updateFeuilleMatch();
-                break;
-
-            case 'DELETE':
-                if (!isset($_GET['id'])) {
-                    http_response_code(400);
-                    echo json_encode(["error" => "ID de la feuille de match non fourni"]);
-                    return;
-                }
-                $this->deleteFeuilleMatch($_GET['id']);
-                break;
-
-            default:
-                http_response_code(405);
-                echo json_encode(["error" => "Méthode non autorisée"]);
-                break;
+    case 'afficher':
+        // Display match sheet details (match, titulaires and remplacants)
+        $id_match = $_GET['id_match'] ?? null;
+        if (!$id_match) {
+            echo json_encode(["error" => "ID du match non spécifié."]);
+            exit;
         }
-    }
+        // Assuming GameMatch is defined in Match.php
+        $gameMatch = new GameMatch($db);
+        $match = $gameMatch->obtenirMatch($id_match);
+        $titulaires = $feuilleMatch->obtenirTitulairesParMatch($id_match);
+        $remplacants = $feuilleMatch->obtenirRemplacantsParMatch($id_match);
 
-    private function getFeuillesMatch() {
-        try {
-            $feuilles = $this->feuilleMatch->getAll();
-            if ($feuilles) {
-                echo json_encode(["success" => true, "data" => $feuilles]);
-            } else {
-                http_response_code(404);
-                echo json_encode(["error" => "Aucune feuille de match trouvée"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la récupération des feuilles de match"]);
-        }
-    }
+        echo json_encode([
+            "success" => true,
+            "match" => $match,
+            "titulaires" => $titulaires,
+            "remplacants" => $remplacants
+        ]);
+        exit;
+        break;
 
-    private function getFeuilleMatch($id) {
-        try {
-            $feuille = $this->feuilleMatch->getById($id);
-            if ($feuille) {
-                // Récupérer les détails supplémentaires
-                $titulaires = $this->feuilleMatch->getTitulaires($id);
-                $remplacants = $this->feuilleMatch->getRemplacants($id);
-                $match = $this->match->getById($feuille['id_match']);
-
-                echo json_encode([
-                    "success" => true,
-                    "data" => [
-                        "feuille" => $feuille,
-                        "match" => $match,
-                        "titulaires" => $titulaires,
-                        "remplacants" => $remplacants
-                    ]
-                ]);
-            } else {
-                http_response_code(404);
-                echo json_encode(["error" => "Feuille de match non trouvée"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la récupération de la feuille de match"]);
-        }
-    }
-
-    private function createFeuilleMatch() {
-        $data = json_decode(file_get_contents("php://input"), true);
-
-        if (!$this->validateFeuilleMatchData($data)) {
-            http_response_code(400);
-            echo json_encode(["error" => "Données incomplètes ou invalides"]);
-            return;
-        }
-
-        try {
-            if ($this->feuilleMatch->create($data)) {
-                http_response_code(201);
-                echo json_encode(["success" => true, "message" => "Feuille de match créée avec succès"]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["error" => "Erreur lors de la création de la feuille de match"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la création de la feuille de match"]);
-        }
-    }
-
-    private function updateFeuilleMatch() {
-        $data = json_decode(file_get_contents("php://input"), true);
-
-        if (!isset($data['id'])) {
-            http_response_code(400);
-            echo json_encode(["error" => "ID de la feuille de match non fourni"]);
-            return;
-        }
-
-        if (!$this->validateFeuilleMatchData($data)) {
-            http_response_code(400);
-            echo json_encode(["error" => "Données incomplètes ou invalides"]);
-            return;
-        }
-
-        try {
-            if ($this->feuilleMatch->update($data)) {
-                http_response_code(200);
-                echo json_encode(["success" => true, "message" => "Feuille de match mise à jour avec succès"]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["error" => "Erreur lors de la mise à jour de la feuille de match"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la mise à jour de la feuille de match"]);
-        }
-    }
-
-    private function deleteFeuilleMatch($id) {
-        try {
-            if ($this->feuilleMatch->delete($id)) {
-                http_response_code(200);
-                echo json_encode(["success" => true, "message" => "Feuille de match supprimée avec succès"]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["error" => "Erreur lors de la suppression de la feuille de match"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la suppression de la feuille de match"]);
-        }
-    }
-
-    private function validateFeuilleMatchData($data) {
-        $requiredFields = ['id_match', 'titulaires', 'remplacants'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field])) {
-                return false;
-            }
-        }
-
-        // Vérifier qu'il y a au moins 11 titulaires
-        if (!is_array($data['titulaires']) || count($data['titulaires']) < 11) {
-            return false;
-        }
-
-        // Vérifier que les remplaçants sont un tableau
-        if (!is_array($data['remplacants'])) {
-            return false;
-        }
-
-        return true;
-    }
-}
-
-    private function getFeuillesMatch() {
-        try {
-            $feuilles = $this->feuilleMatch->getAll();
-            if ($feuilles) {
-                echo json_encode(["success" => true, "data" => $feuilles]);
-            } else {
-                http_response_code(404);
-                echo json_encode(["error" => "Aucune feuille de match trouvée"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la récupération des feuilles de match"]);
-        }
-    }
-
-    private function getFeuilleMatch($id) {
-        try {
-            $feuille = $this->feuilleMatch->getById($id);
-            if ($feuille) {
-                // Récupérer les détails supplémentaires
-                $titulaires = $this->feuilleMatch->getTitulaires($id);
-                $remplacants = $this->feuilleMatch->getRemplacants($id);
-                $match = $this->match->getById($feuille['id_match']);
-
-                echo json_encode([
-                    "success" => true,
-                    "data" => [
-                        "feuille" => $feuille,
-                        "match" => $match,
-                        "titulaires" => $titulaires,
-                        "remplacants" => $remplacants
-                    ]
-                ]);
-            } else {
-                http_response_code(404);
-                echo json_encode(["error" => "Feuille de match non trouvée"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la récupération de la feuille de match"]);
-        }
-    }
-
-    private function createFeuilleMatch() {
-        $data = json_decode(file_get_contents("php://input"), true);
-
-        if (!$this->validateFeuilleMatchData($data)) {
-            http_response_code(400);
-            echo json_encode(["error" => "Données incomplètes ou invalides"]);
-            return;
-        }
-
-        try {
-            if ($this->feuilleMatch->create($data)) {
-                http_response_code(201);
-                echo json_encode(["success" => true, "message" => "Feuille de match créée avec succès"]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["error" => "Erreur lors de la création de la feuille de match"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la création de la feuille de match"]);
-        }
-    }
+    case 'ajouter':
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
             echo json_encode(["error" => "ID du match non spécifié."]);
@@ -347,34 +143,7 @@ class FeuilleMatchController {
         }
         break;
 
-    private function updateFeuilleMatch() {
-        $data = json_decode(file_get_contents("php://input"), true);
-
-        if (!isset($data['id'])) {
-            http_response_code(400);
-            echo json_encode(["error" => "ID de la feuille de match non fourni"]);
-            return;
-        }
-
-        if (!$this->validateFeuilleMatchData($data)) {
-            http_response_code(400);
-            echo json_encode(["error" => "Données incomplètes ou invalides"]);
-            return;
-        }
-
-        try {
-            if ($this->feuilleMatch->update($data)) {
-                http_response_code(200);
-                echo json_encode(["success" => true, "message" => "Feuille de match mise à jour avec succès"]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["error" => "Erreur lors de la mise à jour de la feuille de match"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la mise à jour de la feuille de match"]);
-        }
-    }
+    case 'modifier':
         // Return current players (titulaires and remplacants) for modification
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
@@ -487,41 +256,7 @@ class FeuilleMatchController {
         }
         break;
 
-    private function deleteFeuilleMatch($id) {
-        try {
-            if ($this->feuilleMatch->delete($id)) {
-                http_response_code(200);
-                echo json_encode(["success" => true, "message" => "Feuille de match supprimée avec succès"]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["error" => "Erreur lors de la suppression de la feuille de match"]);
-            }
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(["error" => "Erreur lors de la suppression de la feuille de match"]);
-        }
-    }
-
-    private function validateFeuilleMatchData($data) {
-        $requiredFields = ['id_match', 'titulaires', 'remplacants'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field])) {
-                return false;
-            }
-        }
-
-        // Vérifier qu'il y a au moins 11 titulaires
-        if (!is_array($data['titulaires']) || count($data['titulaires']) < 11) {
-            return false;
-        }
-
-        // Vérifier que les remplaçants sont un tableau
-        if (!is_array($data['remplacants'])) {
-            return false;
-        }
-
-        return true;
-    }
+    case 'valider_feuille':
         // Validate the match sheet by ensuring there are at least 11 titulaires and updating its state
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {

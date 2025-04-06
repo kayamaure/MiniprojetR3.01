@@ -6,6 +6,15 @@ class Utilisateur {
         $this->pdo = $db;
     }
 
+    public function creerUtilisateur($nom_utilisateur, $mot_de_passe) {
+        $stmt = $this->pdo->prepare("INSERT INTO utilisateur (nom_utilisateur, mot_de_passe) VALUES (:nom, :mdp)");
+        return $stmt->execute([
+            'nom' => $nom_utilisateur,
+            'mdp' => $mot_de_passe
+        ]);
+    }
+    
+
     public function trouverParNomUtilisateur($nom_utilisateur) {
         $stmt = $this->pdo->prepare("SELECT * FROM utilisateur WHERE nom_utilisateur = :username");
         $stmt->execute(['username' => $nom_utilisateur]);
@@ -25,5 +34,11 @@ class Utilisateur {
         $stmt = $this->pdo->prepare("UPDATE utilisateur SET derniere_connexion = CURRENT_TIMESTAMP WHERE id_utilisateur = :id");
         $stmt->execute(['id' => $id_utilisateur]);
     }
+    
+    public function supprimerToken($token) {
+        $stmt = $this->pdo->prepare("DELETE FROM tokens WHERE token = :token");
+        return $stmt->execute(['token' => $token]);
+    }
+    
 }
 ?>

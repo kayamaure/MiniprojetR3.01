@@ -53,12 +53,12 @@
         
         <form id="inscription-form">
             <label for="nom_utilisateur">Nom d'utilisateur :</label>
-            <input type="text" name="nom_utilisateur" id="nom_utilisateur" required 
+            <input type="text" name="username" id="username" required 
                    minlength="3" maxlength="50" pattern="[a-zA-Z0-9_-]+">
             <p class="info-message">Le nom d'utilisateur doit contenir entre 3 et 50 caractères.</p>
 
-            <label for="mot_de_passe">Mot de passe :</label>
-            <input type="password" name="mot_de_passe" id="mot_de_passe" required minlength="6">
+            <label for="password">Mot de passe :</label>
+            <input type="password" name="password" id="password" required minlength="6">
             <p class="password-requirements">Le mot de passe doit contenir au moins 6 caractères.</p>
 
             <button type="submit" class="btn btn-add">Créer le Compte</button>
@@ -87,7 +87,7 @@
                 const formData = new FormData(this);
                 const userData = Object.fromEntries(formData.entries());
                 
-                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-auth/index.php?action=register', {
+                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-auth/public/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

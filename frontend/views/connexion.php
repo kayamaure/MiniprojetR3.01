@@ -66,137 +66,60 @@ include 'header.php';
     </div>
 
     <!-- Inclusion du gestionnaire d'authentification -->
-    <script src="../assets/js/auth.js"></script>
     <script>
-        // Vérification de la connexion au chargement de la page
-        if (authManager.isLoggedIn()) {
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const loader = document.getElementById('loader');
+
+        // Redirection si déjà connecté
+        if (localStorage.getItem('authToken')) {
             window.location.href = 'dashboard.php';
+            return;
         }
 
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const errorElement = document.getElementById('error-message');
-            const loader = document.getElementById('loader');
-            errorElement.style.display = 'none';
+            errorMessage.style.display = 'none';
             loader.style.display = 'block';
 
-            try {
-                const formData = new FormData(this);
-                const userData = Object.fromEntries(formData.entries());
+            const username = document.getElementById('nom_utilisateur').value;
+            const password = document.getElementById('mot_de_passe').value;
 
-                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-auth/index.php?action=login', {
+            try {
+                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-auth/public/auth', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(userData)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nom_utilisateur: username, mot_de_passe: password })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Sauvegarde du token avec expiration après 15 minutes
-                    authManager.setToken(data.token);
+                    localStorage.setItem('authToken', data.token);
                     window.location.href = 'dashboard.php';
                 } else {
-                    errorElement.textContent = data.error || 'Erreur lors de la connexion';
-                    errorElement.style.display = 'block';
+                    errorMessage.textContent = data.error || 'Erreur lors de la connexion.';
+                    errorMessage.style.display = 'block';
                 }
-            } catch (error) {
-                errorElement.textContent = 'Erreur de connexion au serveur';
-                errorElement.style.display = 'block';
-                console.error('Erreur:', error);
+
+                // Debug info (si disponible)
+                if (data.debug) {
+                    console.log("Infos debug : ", data.debug);
+                    // Tu peux aussi afficher ça dans un élément HTML si besoin
+                }
+
+            } catch (err) {
+                errorMessage.textContent = 'Erreur de connexion au serveur.';
+                errorMessage.style.display = 'block';
+                console.error('Erreur:', err);
             } finally {
                 loader.style.display = 'none';
             }
-            
-            // Masquer les messages d'erreur précédents
-            document.getElementById('error-message').innerText = '';
-
-            // Retrieve user input
-            const username = document.getElementById('nom_utilisateur').value;
-            const password = document.getElementById('mot_de_passe').value;
-            
-            try {
-                // Send a POST request to the login endpoint
-                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-auth/index.php?action=login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        nom_utilisateur: username,
-                        mot_de_passe: password
-                    })
-                });
-                
-                // Parse the JSON response
-                const data = await response.json();
-
-                if (data.success) {
-                    // Save the JWT token in local storage
-                    localStorage.setItem('authToken', data.token);
-                    // Redirect the user to the dashboard
-                    window.location.href = 'dashboard.php';
-                } else {
-                    // Masquer l'indicateur de chargement
-                    loader.style.display = 'none';
-                    // Display error message
-                    document.getElementById('error-message').innerText = data.error || 'Erreur lors de la connexion.';
-                }
-            } catch (error) {
-                // Masquer l'indicateur de chargement
-                loader.style.display = 'none';
-                // Afficher l'erreur
-                document.getElementById('error-message').innerText = 'Erreur de connexion au serveur. Veuillez réessayer.';
-                console.error('Erreur:', error);
-            }
         });
-    </script>
-    <?php include 'footer.php'; ?>
-</body>
-</html>
+    });
+</script>
 
-                    debugInfo.innerHTML = `<h4>Informations de performance</h4>
-                        <p>Temps total de réponse: ${responseTime.toFixed(2)} ms</p>
-                        <p>Temps total coûté serveur: ${(data.debug.total_time * 1000).toFixed(2)} ms</p>
-                        <p>Temps de connexion à la base de données: ${(data.debug.db_connection_time * 1000).toFixed(2)} ms</p>
-                        <p>Temps de vérification utilisateur: ${(data.debug.user_verification_time * 1000).toFixed(2)} ms</p>`;
-                    
-                    // Afficher les détails de vérification utilisateur si disponibles
-                    if (data.debug.user_verification_details) {
-                        const details = data.debug.user_verification_details;
-                        debugInfo.innerHTML += `<p>Détails de vérification utilisateur:</p>
-                            <ul>
-                                <li>Préparation de la requête: ${(details.query_prep_time * 1000).toFixed(2)} ms</li>
-                                <li>Exécution de la requête: ${(details.query_execute_time * 1000).toFixed(2)} ms</li>
-                                <li>Récupération des données: ${(details.fetch_time * 1000).toFixed(2)} ms</li>
-                                <li>Vérification du mot de passe: ${(details.password_verify_time * 1000).toFixed(2)} ms</li>
-                            </ul>`;
-                    }
-                }
-
-                if (data.success) {
-                    // Save the JWT token in local storage
-                    localStorage.setItem('authToken', data.token);
-                    // Redirect the user to the dashboard
-                    window.location.href = 'dashboard.php';
-                } else {
-                    // Masquer l'indicateur de chargement
-                    loader.style.display = 'none';
-                    // Display error message
-                    document.getElementById('error-message').innerText = data.error || 'Erreur lors de la connexion.';
-                }
-            } catch (error) {
-                // Masquer l'indicateur de chargement
-                loader.style.display = 'none';
-                // Afficher l'erreur
-                document.getElementById('error-message').innerText = 'Erreur de connexion au serveur. Veuillez réessayer.';
-                console.error('Erreur:', error);
-            }
-        });
-    </script>
     <?php include 'footer.php'; ?>
 </body>
 </html>

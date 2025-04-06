@@ -22,29 +22,43 @@ $baseUrl = '/MiniprojetR3.01/frontend';
 </header>
 
 <script>
-    // Vérifier si l'utilisateur est authentifié avec JWT
-    document.addEventListener('DOMContentLoaded', function() {
-        const token = localStorage.getItem('authToken');
-        const navLinks = document.getElementById('nav-links');
-        const logoutBtn = document.getElementById('logout-btn');
-        
-        // Afficher/masquer la navigation selon la présence du token
-        if (!token) {
-            // Masquer les liens de navigation si pas de token
-            if (navLinks) {
-                navLinks.style.display = 'none';
-            }
-        } else {
-            // Configurer le bouton de déconnexion
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    // Supprimer le token JWT
-                    localStorage.removeItem('authToken');
-                    // Rediriger vers la page de connexion
-                    window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('authToken');
+    const navLinks = document.getElementById('nav-links');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // Cacher la navigation si pas connecté
+    if (!token && navLinks) {
+        navLinks.style.display = 'none';
+    }
+
+    // Déconnexion : appeler l'API logout
+    if (token && logoutBtn) {
+        logoutBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            try {
+                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-auth/public/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
+
+                const data = await response.json();
+
+                if (data.success || response.ok) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
+                } else {
+                    alert(data.error || "Erreur lors de la déconnexion.");
+                }
+            } catch (error) {
+                console.error("Erreur lors de la déconnexion :", error);
+                alert("Erreur de communication avec le serveur.");
             }
-        }
-    });
+        });
+    }
+});
 </script>

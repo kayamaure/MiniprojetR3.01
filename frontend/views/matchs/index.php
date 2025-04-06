@@ -73,7 +73,7 @@
                 const filter = urlParams.get('filter') || 'all';
                 
                 const token = localStorage.getItem('authToken');
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=matchs&filter=${filter}`, {
+                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=matchs&filter=${filter}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -142,7 +142,7 @@
             
             try {
                 const token = localStorage.getItem('authToken');
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=supprimer_match&id_match=${idMatch}`, {
+                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=matchs&id_match=${idMatch}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`

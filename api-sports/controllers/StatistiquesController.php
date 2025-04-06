@@ -1,12 +1,5 @@
 <?php
-/**
- * Fichier : MonCompteController.php
- * 
- * Description :
- * Ce fichier contient le contrôleur `MonCompteController` qui gère les actions liées à la page 
- * "Mon Compte". Il permet de vérifier si un utilisateur est connecté, de récupérer ses informations 
- * depuis la base de données et de les afficher dans une vue dédiée.
- *  */
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
