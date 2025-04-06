@@ -1,29 +1,25 @@
 <?php
 header("Content-Type: application/json");
 
-// Include required configuration and model files
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/Joueur.php';
 
-// Create database connection and instantiate the Joueur model
 $database = new Database();
 $db = $database->getConnection();
 $joueur = new Joueur($db);
 
-// Get the requested action from the GET parameters; default to "liste"
 $action = $_GET['action'] ?? 'liste';
 
 switch ($action) {
     case 'liste':
-        // List all players
+        // Liste de tous les joueurs        
         $joueurs = $joueur->obtenirTousLesJoueurs();
         echo json_encode(["success" => true, "joueurs" => $joueurs]);
         exit;
         break;
 
     case 'ajouter':
-        // Adding a player: expect a POST request with JSON data
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        // Ajout d'un lecteur : attente d'une requête POST avec des données JSON        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(["error" => "Invalid request method. Use POST."]);
             exit;
         }
@@ -32,7 +28,6 @@ switch ($action) {
             echo json_encode(["error" => "Missing or invalid JSON input."]);
             exit;
         }
-        // Required fields: numero_licence, nom, prenom, date_naissance, taille, poids, statut
         if (!isset($input['numero_licence'], $input['nom'], $input['prenom'], $input['date_naissance'], $input['taille'], $input['poids'], $input['statut'])) {
             echo json_encode(["error" => "Missing required fields."]);
             exit;
@@ -55,8 +50,7 @@ switch ($action) {
         break;
 
     case 'modifier':
-        // Modifying a player: expect a POST request with JSON data.
-        // The player's numero_licence is passed as a GET parameter.
+
         if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
             echo json_encode(["error" => "Invalid request method. Use PUT for modification."]);
             exit;
@@ -71,7 +65,6 @@ switch ($action) {
             echo json_encode(["error" => "Missing or invalid JSON input."]);
             exit;
         }
-        // Required fields for modification: nom, prenom, date_naissance, taille, poids, statut
         if (!isset($input['nom'], $input['prenom'], $input['date_naissance'], $input['taille'], $input['poids'], $input['statut'])) {
             echo json_encode(["error" => "Missing required fields for modification."]);
             exit;
@@ -94,7 +87,7 @@ switch ($action) {
         break;
 
     case 'supprimer':
-        // Deleting a player: the player's numero_licence is passed as a GET parameter.
+        // Supprimer joueur
         $numero_licence = $_GET['numero_licence'] ?? null;
         if (!$numero_licence) {
             echo json_encode(["error" => "Numero de licence non spécifié."]);
