@@ -1,48 +1,40 @@
 <?php
-/**
- * Contrôleur de gestion des joueurs
- * Gère toutes les opérations liées aux joueurs via l'API JSON
- */
-
 header("Content-Type: application/json");
 
-// Inclusion des fichiers de configuration et des modèles nécessaires
+// Include required configuration and model files
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/Joueur.php';
 
-// Création de la connexion à la base de données et instanciation du modèle Joueur
+// Create database connection and instantiate the Joueur model
 $database = new Database();
 $db = $database->getConnection();
 $joueur = new Joueur($db);
 
-// Récupération de l'action demandée depuis les paramètres GET (par défaut: 'liste')
+// Get the requested action from the GET parameters; default to "liste"
 $action = $_GET['action'] ?? 'liste';
 
 switch ($action) {
     case 'liste':
-        // Récupération de la liste complète des joueurs
+        // List all players
         $joueurs = $joueur->getAll();
         echo json_encode(["success" => true, "joueurs" => $joueurs]);
         exit;
         break;
 
     case 'ajouter':
-        // Ajout d'un nouveau joueur : nécessite une requête POST avec des données JSON
+        // Adding a player: expect a POST request with JSON data
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(["error" => "Méthode de requête invalide. Utilisez POST."]);
+            echo json_encode(["error" => "Invalid request method. Use POST."]);
             exit;
         }
-
-        // Récupération et validation des données JSON
         $input = json_decode(file_get_contents("php://input"), true);
         if (!$input) {
-            echo json_encode(["error" => "Données JSON manquantes ou invalides."]);
+            echo json_encode(["error" => "Missing or invalid JSON input."]);
             exit;
         }
-
-        // Vérification des champs requis : numero_licence, nom, prenom, date_naissance, taille, poids, statut
+        // Required fields: numero_licence, nom, prenom, date_naissance, taille, poids, statut
         if (!isset($input['numero_licence'], $input['nom'], $input['prenom'], $input['date_naissance'], $input['taille'], $input['poids'], $input['statut'])) {
-            echo json_encode(["error" => "Champs requis manquants."]);
+            echo json_encode(["error" => "Missing required fields."]);
             exit;
         }
         $data = [
@@ -63,37 +55,25 @@ switch ($action) {
         break;
 
     case 'modifier':
-<<<<<<< Updated upstream
         // Modifying a player: expect a POST request with JSON data.
         // The player's numero_licence is passed as a GET parameter.
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(["error" => "Invalid request method. Use POST for modification."]);
-=======
-        // Modification d'un joueur : nécessite une requête PUT avec des données JSON
-        // Le numéro de licence du joueur est passé en paramètre GET
         if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
-            echo json_encode(["error" => "Méthode de requête invalide. Utilisez PUT pour la modification."]);
->>>>>>> Stashed changes
+            echo json_encode(["error" => "Invalid request method. Use PUT for modification."]);
             exit;
         }
-
-        // Vérification du numéro de licence
         $numero_licence = $_GET['numero_licence'] ?? null;
         if (!$numero_licence) {
-            echo json_encode(["error" => "Numéro de licence non spécifié."]);
+            echo json_encode(["error" => "Numero de licence non spécifié."]);
             exit;
         }
-
-        // Récupération et validation des données JSON
         $input = json_decode(file_get_contents("php://input"), true);
         if (!$input) {
-            echo json_encode(["error" => "Données JSON manquantes ou invalides."]);
+            echo json_encode(["error" => "Missing or invalid JSON input."]);
             exit;
         }
-
-        // Vérification des champs requis pour la modification : nom, prenom, date_naissance, taille, poids, statut
+        // Required fields for modification: nom, prenom, date_naissance, taille, poids, statut
         if (!isset($input['nom'], $input['prenom'], $input['date_naissance'], $input['taille'], $input['poids'], $input['statut'])) {
-            echo json_encode(["error" => "Champs requis manquants pour la modification."]);
+            echo json_encode(["error" => "Missing required fields for modification."]);
             exit;
         }
         $data = [
@@ -114,14 +94,12 @@ switch ($action) {
         break;
 
     case 'supprimer':
-        // Suppression d'un joueur : le numéro de licence est passé en paramètre GET
+        // Deleting a player: the player's numero_licence is passed as a GET parameter.
         $numero_licence = $_GET['numero_licence'] ?? null;
         if (!$numero_licence) {
-            echo json_encode(["error" => "Numéro de licence non spécifié."]);
+            echo json_encode(["error" => "Numero de licence non spécifié."]);
             exit;
         }
-
-        // Tentative de suppression du joueur
         if ($joueur->delete($numero_licence)) {
             echo json_encode(["success" => "Joueur supprimé avec succès."]);
         } else {
@@ -131,7 +109,6 @@ switch ($action) {
         break;
 
     default:
-        // Gestion des actions non reconnues
         echo json_encode(["error" => "Action non reconnue."]);
         exit;
         break;

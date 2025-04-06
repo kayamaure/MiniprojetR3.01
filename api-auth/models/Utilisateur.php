@@ -1,15 +1,27 @@
 <?php
+<<<<<<< Updated upstream
 require_once __DIR__ . '/../config/database.php';
 
+=======
+/**
+ * Classe de gestion des utilisateurs
+ * Gère les opérations liées aux utilisateurs dans la base de données
+ */
+>>>>>>> Stashed changes
 class Utilisateur {
     private $conn;
     private $table_name = "utilisateur";
     private $table_tokens = "tokens";
 
+    /**
+     * Constructeur
+     * @param PDO $db Instance de connexion à la base de données
+     */
     public function __construct($db) {
         $this->conn = $db;
     }
 
+<<<<<<< Updated upstream
     // Crée un nouveau token JWT pour l'utilisateur
     public function creerToken($id_utilisateur) {
         // Supprime les anciens tokens expirés
@@ -169,6 +181,92 @@ class Utilisateur {
             error_log($e->getMessage()); 
             return false; 
         }
+=======
+    /**
+     * Crée un nouvel utilisateur dans la base de données
+     * @param string $nom_utilisateur Nom d'utilisateur
+     * @param string $mot_de_passe Mot de passe hashé
+     * @return bool Succès de la création
+     */
+    public function creerUtilisateur($nom_utilisateur, $mot_de_passe) {
+        $stmt = $this->pdo->prepare("INSERT INTO utilisateur (nom_utilisateur, mot_de_passe) VALUES (:nom, :mdp)");
+        return $stmt->execute([
+            'nom' => $nom_utilisateur,
+            'mdp' => $mot_de_passe
+        ]);
+    }
+    
+
+    /**
+     * Recherche un utilisateur par son nom d'utilisateur
+     * @param string $nom_utilisateur Nom d'utilisateur à rechercher
+     * @return array|false Données de l'utilisateur ou false si non trouvé
+     */
+    public function trouverParNomUtilisateur($nom_utilisateur) {
+        $stmt = $this->pdo->prepare("SELECT * FROM utilisateur WHERE nom_utilisateur = :username");
+        $stmt->execute(['username' => $nom_utilisateur]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Enregistre un nouveau jeton d'authentification
+     * @param int $id_utilisateur ID de l'utilisateur
+     * @param string $jeton Token JWT
+     * @param string $expiration Date d'expiration du token
+     * @return bool Succès de l'enregistrement
+     */
+    public function enregistrerJeton($id_utilisateur, $jeton, $expiration) {
+        $stmt = $this->pdo->prepare("INSERT INTO tokens (id_utilisateur, token, date_expiration) VALUES (:id_utilisateur, :token, :expiration)");
+        return $stmt->execute([
+            'id_utilisateur' => $id_utilisateur,
+            'token' => $jeton,
+            'expiration' => $expiration
+        ]);
+    }
+
+    /**
+     * Met à jour la date de dernière connexion d'un utilisateur
+     * @param int $id_utilisateur ID de l'utilisateur
+     */
+    public function mettreAJourDerniereConnexion($id_utilisateur) {
+        $stmt = $this->pdo->prepare("UPDATE utilisateur SET derniere_connexion = CURRENT_TIMESTAMP WHERE id_utilisateur = :id");
+        $stmt->execute(['id' => $id_utilisateur]);
+    }
+    
+    /**
+     * Supprime un token d'authentification de la base de données
+     * @param string $token Token JWT à supprimer
+     * @return bool Succès de la suppression
+     */
+    public function supprimerToken($token) {
+        $stmt = $this->pdo->prepare("DELETE FROM tokens WHERE token = :token");
+        return $stmt->execute(['token' => $token]);
+    }
+
+    /**
+     * Récupère les informations d'un utilisateur par son ID
+     * @param int $id_utilisateur ID de l'utilisateur
+     * @return array|false Données de l'utilisateur ou false si non trouvé
+     */
+    public function getById($id_utilisateur) {
+        $stmt = $this->pdo->prepare("SELECT * FROM utilisateur WHERE id_utilisateur = :id");
+        $stmt->execute(['id' => $id_utilisateur]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Modifie le mot de passe d'un utilisateur
+     * @param int $id_utilisateur ID de l'utilisateur
+     * @param string $nouveau_hash Nouveau mot de passe hashé
+     * @return bool Succès de la modification
+     */
+    public function changerMotDePasse($id_utilisateur, $nouveau_hash) {
+        $stmt = $this->pdo->prepare("UPDATE utilisateur SET mot_de_passe = :mdp WHERE id_utilisateur = :id");
+        return $stmt->execute([
+            'mdp' => $nouveau_hash,
+            'id' => $id_utilisateur
+        ]);
+>>>>>>> Stashed changes
     }
     
     

@@ -1,8 +1,4 @@
 <?php
-/**
- * Contrôleur pour la gestion des commentaires
- * Gère l'ajout de nouveaux commentaires pour les joueurs
- */
 
 header("Content-Type: application/json");
 
@@ -12,7 +8,6 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit();
 }
 
-// Inclusion des dépendances
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/Commentaire.php';
 
@@ -45,13 +40,9 @@ $data = [
 
 // Tenter d'ajouter le commentaire dans la base de données
 if ($commentaire->ajouterCommentaire($data)) {
-    echo json_encode([
-        "success" => "Commentaire ajouté avec succès."
-    ]);
+    echo json_encode(["success" => "Commentaire ajouté avec succès."]);
 } else {
-    echo json_encode([
-        "error" => "Échec de l'ajout du commentaire."
-    ]);
+    echo json_encode(["error" => "Échec de l'ajout du commentaire."]);
 }
 
 exit();

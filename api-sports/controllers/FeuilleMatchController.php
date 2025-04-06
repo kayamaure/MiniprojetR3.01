@@ -1,44 +1,48 @@
 <?php
-// FeuilleMatchController.php for API (api-sports)
-// This controller handles actions for match sheets (feuilles de match) via JSON API
+/**
+ * Contrôleur de gestion des feuilles de match
+ * Gère toutes les opérations liées aux feuilles de match via l'API JSON
+ */
 
 header("Content-Type: application/json");
 
-// Use JSON input for POST methods
+// Récupération des données JSON pour les méthodes POST
 $inputData = json_decode(file_get_contents("php://input"), true);
 
-// Include required model and configuration files using absolute paths
+// Inclusion des modèles et fichiers de configuration nécessaires
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/FeuilleMatch.php';
-require_once __DIR__ . '/../models/Match.php';      // Assume GameMatch is defined here
+require_once __DIR__ . '/../models/Match.php';        // Définition de la classe GameMatch
 require_once __DIR__ . '/../models/Joueur.php';
 require_once __DIR__ . '/../models/Commentaire.php';
 require_once __DIR__ . '/../models/Participer.php';
 
-// Create database connection and instantiate the models
+// Création de la connexion à la base de données et instanciation des modèles
 $database = new Database();
 $db = $database->getConnection();
 $feuilleMatch = new FeuilleMatch($db);
 $commentaireModel = new Commentaire($db);
 
-// Get the requested action from the GET parameters; default to "afficher"
+// Récupération de l'action demandée depuis les paramètres GET (par défaut: 'afficher')
 $action = $_GET['action'] ?? 'afficher';
 
 switch ($action) {
 
     case 'afficher':
-        // Display match sheet details (match, titulaires and remplacants)
+        // Affichage des détails de la feuille de match (match, titulaires et remplaçants)
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
             echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-        // Assuming GameMatch is defined in Match.php
+
+        // Récupération des informations du match et des joueurs
         $gameMatch = new GameMatch($db);
         $match = $gameMatch->obtenirMatch($id_match);
         $titulaires = $feuilleMatch->obtenirTitulairesParMatch($id_match);
         $remplacants = $feuilleMatch->obtenirRemplacantsParMatch($id_match);
 
+        // Envoi de la réponse avec toutes les informations
         echo json_encode([
             "success" => true,
             "match" => $match,
@@ -49,21 +53,29 @@ switch ($action) {
         break;
 
     case 'ajouter':
+        // Vérification de l'ID du match
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
             echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
-        // If GET, return match info with unselected players
+
+        // Méthode GET : Retourne les informations du match et la liste des joueurs non sélectionnés
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Récupération des données du match
             $gameMatch = new GameMatch($db);
             $match = $gameMatch->obtenirMatch($id_match);
+
+            // Récupération et enrichissement des données des joueurs
             $joueursNonSelectionnes = $feuilleMatch->obtenirJoueursNonSelectionnes($id_match);
             foreach ($joueursNonSelectionnes as &$joueur) {
+                // Ajout des évaluations moyennes et du dernier commentaire
                 $joueur['moyenne_evaluation'] = $feuilleMatch->obtenirMoyenneEvaluation($joueur['numero_licence']);
                 $joueur['commentaire'] = $commentaireModel->obtenirDernierCommentaireParJoueur($joueur['numero_licence']);
             }
             unset($joueur);
+
+            // Envoi de la réponse
             echo json_encode([
                 "success" => true,
                 "match" => $match,
@@ -71,18 +83,24 @@ switch ($action) {
             ]);
             exit;
         }
-        // If POST, add a player to the match sheet
+
+        // Méthode POST : Ajout d'un joueur à la feuille de match
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Vérification des champs requis
             if (!isset($inputData['numero_licence'], $inputData['id_match'], $inputData['role'], $inputData['poste'])) {
                 echo json_encode(["error" => "Champs requis manquants."]);
                 exit;
             }
+
+            // Préparation des données du joueur
             $data = [
                 'numero_licence' => $inputData['numero_licence'],
                 'id_match'        => $inputData['id_match'],
                 'role'            => $inputData['role'],
                 'poste'           => $inputData['poste']
             ];
+
+            // Tentative d'ajout du joueur
             try {
                 $feuilleMatch->ajouterJoueur($data);
                 echo json_encode(["success" => "Joueur ajouté avec succès."]);
@@ -95,32 +113,40 @@ switch ($action) {
         break;
 
     case 'evaluer':
-        // Retrieve players to be evaluated for a given match
+        // Récupération de la liste des joueurs à évaluer pour un match donné
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
             echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
+
+        // Récupération des joueurs ayant participé au match
         $participe = $feuilleMatch->obtenirJoueursParMatch($id_match);
         echo json_encode(["success" => true, "joueurs" => $participe]);
         exit;
         break;
 
     case 'valider_evaluation':
-        // Validate and update evaluations for players in a match
+        // Validation et mise à jour des évaluations des joueurs pour un match
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
             echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
+
+        // Vérification de la présence d'évaluations
         if (empty($inputData['evaluations'])) {
             echo json_encode(["error" => "Aucune évaluation soumise."]);
             exit;
         }
+
+        // Récupération des données d'évaluation
         $evaluations = $inputData['evaluations'];
         $roles = $inputData['roles'] ?? [];
         $postes = $inputData['postes'] ?? [];
+
         try {
+            // Vérification de la validité des notes d'évaluation
             foreach ($evaluations as $numero_licence => $evaluation) {
                 if (!is_numeric($evaluation) || $evaluation < 1 || $evaluation > 5) {
                     echo json_encode(["error" => "Les évaluations doivent être des nombres entre 1 et 5."]);
@@ -144,14 +170,18 @@ switch ($action) {
         break;
 
     case 'modifier':
-        // Return current players (titulaires and remplacants) for modification
+        // Récupération des joueurs actuels (titulaires et remplaçants) pour modification
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
             echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
+
+        // Récupération des listes de joueurs
         $titulaires = $feuilleMatch->obtenirTitulairesParMatch($id_match) ?? [];
         $remplacants = $feuilleMatch->obtenirRemplacantsParMatch($id_match) ?? [];
+
+        // Envoi de la réponse avec les listes de joueurs
         echo json_encode([
             "success" => true,
             "titulaires" => $titulaires,
@@ -161,12 +191,14 @@ switch ($action) {
         break;
 
     case 'supprimer':
-        // Delete selected players from a match sheet
+        // Suppression des joueurs sélectionnés de la feuille de match
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
             echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
+
+        // Récupération des données de la requête
         $input = json_decode(file_get_contents("php://input"), true);
         $joueursASupprimer = $input['joueur_a_supprimer'] ?? [];
         if (empty($joueursASupprimer)) {
@@ -187,17 +219,23 @@ switch ($action) {
         break;
 
     case 'valider_selection':
-        // Validate the player selection for a match (ensure at least 11 titulaires)
+        // Validation de la sélection des joueurs pour un match (vérification du minimum de 11 titulaires)
         $id_match = $_GET['id_match'] ?? null;
         if (!$id_match) {
             echo json_encode(["error" => "ID du match non spécifié."]);
             exit;
         }
+
+        // Récupération des données de sélection
         $input = json_decode(file_get_contents("php://input"), true);
         $selections = $input['joueur_selectionnes'] ?? [];
+
+        // Comptage des titulaires et validation des données des joueurs
         $titularCount = 0;
         $joueursValides = array_filter($selections, function ($selection) use (&$titularCount) {
+            // Vérification des champs obligatoires
             if (!empty($selection['numero_licence']) && !empty($selection['role']) && !empty($selection['poste'])) {
+                // Incrémentation du compteur pour les titulaires
                 if ($selection['role'] === 'Titulaire') {
                     $titularCount++;
                 }
@@ -205,10 +243,14 @@ switch ($action) {
             }
             return false;
         });
+
+        // Vérification du nombre minimum de titulaires requis
         if ($titularCount < 11) {
             echo json_encode(["error" => "Vous devez sélectionner au moins 11 titulaires."]);
             exit;
         }
+
+        // Initialisation du modèle de participation
         $participerModel = new Participer($db);
         try {
             foreach ($joueursValides as $selection) {

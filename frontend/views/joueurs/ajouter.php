@@ -57,6 +57,7 @@ if (session_status() === PHP_SESSION_NONE) {
         </form>
     </div>
 
+<<<<<<< Updated upstream
     <?php include '../../views/footer.php'; ?>
     
     <script>
@@ -107,5 +108,90 @@ if (session_status() === PHP_SESSION_NONE) {
             });
         });
     </script>
+=======
+        <label for="poids">Poids (kg):</label>
+        <input type="number" name="poids" id="poids" required><br>
+
+        <label for="statut">Statut:</label>
+        <select name="statut" id="statut" required>
+            <option value="">Sélectionnez un statut</option>
+            <option value="Actif">Actif</option>
+            <option value="Blessé">Blessé</option>
+            <option value="Suspendu">Suspendu</option>
+            <option value="Inactif">Inactif</option>
+        </select><br>
+
+        <input type="submit" value="Ajouter" class="btn btn-add">
+        <a href="index.php" class="btn btn-back">Retour</a>
+    </form>
+</div>
+
+<?php include '../../views/footer.php'; ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
+        return;
+    }
+
+    ajouterJoueur(token);
+});
+
+// Gestion du formulaire avec le token en paramètre
+function ajouterJoueur(token) {
+    const form = document.getElementById('joueur-form');
+    const errorDiv = document.getElementById('error-message');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorDiv.textContent = '';
+        errorDiv.style.color = 'red';
+
+        const formData = new FormData(form);
+        const joueurData = Object.fromEntries(formData.entries());
+
+        try {
+            const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=joueurs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(joueurData)
+            });
+
+            const raw = await response.text();
+            console.log("Réponse brute :", raw);
+
+            let data;
+            try {
+                data = JSON.parse(raw);
+            } catch (err) {
+                errorDiv.textContent = 'Réponse invalide du serveur (non JSON).';
+                console.error('Erreur JSON.parse() :', err);
+                return;
+            }
+
+            if (data.success || data.message) {
+                errorDiv.style.color = 'green';
+                errorDiv.textContent = 'Joueur ajouté avec succès ! Redirection...';
+                setTimeout(() => {
+                    window.location.href = 'index.php';
+                }, 1500);
+            } else {
+                errorDiv.textContent = data.error || 'Erreur lors de l\'ajout du joueur.';
+            }
+
+        } catch (error) {
+            console.error('Erreur fetch:', error);
+            errorDiv.textContent = 'Erreur de connexion avec le serveur.';
+        }
+    });
+}
+</script>
+
+>>>>>>> Stashed changes
 </body>
 </html>
