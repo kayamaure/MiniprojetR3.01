@@ -23,6 +23,10 @@ switch ($route) {
     case 'logout':
         require_once __DIR__ . '/../endpoints/LogoutEndpoint.php';
         break;
+    case 'modifier':
+        require_once __DIR__ . '/../endpoints/ModifierUtilisateurEndpoint.php';
+        break;
+        
     default:
         http_response_code(404);
         echo json_encode(["error" => "Route non trouvée"]);

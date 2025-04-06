@@ -131,7 +131,7 @@
         // Fonction pour récupérer les détails du match et les joueurs à évaluer
         async function fetchMatchAndPlayers(idMatch, token) {
             try {
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=evaluer&id_match=${idMatch}`, {
+                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=feuille_match&sub_action=evaluer&id_match=${idMatch}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -155,7 +155,7 @@
                 }
                 
                 // Afficher le formulaire d'évaluation pour les joueurs
-                displayEvaluationForm(data.joueursSelectionnes || [], idMatch, token);
+                displayEvaluationForm(data.joueurs || [], idMatch, token);
                 
             } catch (error) {
                 console.error('Erreur:', error);
@@ -198,8 +198,9 @@
                 form.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     const formData = new FormData(form);
-                    const data = Object.fromEntries(formData.entries());
-                    await submitEvaluation(data, token, idMatch);
+await submitEvaluation(formData, token, idMatch);
+
+
                 });
             });
         }
@@ -209,75 +210,85 @@
             let html = '';
             
             players.forEach(joueur => {
-                const formId = `form-${joueur.id_selection}`;
+                const formId = `form-${joueur.numero_licence}`;
                 // Utiliser note au lieu de note_joueur et définir une valeur par défaut à 1
-                const noteValue = joueur.note || 1;
+                const noteValue = joueur.evaluation || 1;
                 
                 html += `
-                    <div class="player-evaluation">
-                        <h3>${joueur.nom_joueur || 'N/A'} ${joueur.prenom_joueur || 'N/A'} - ${joueur.poste || 'N/A'}</h3>
-                        <form class="evaluation-form" id="${formId}">
-                            <input type="hidden" name="id_selection" value="${joueur.id_selection}">
-                            <input type="hidden" name="id_match" value="${idMatch}">
-                            
-                            <div class="rating">
-                                <input type="radio" id="star5-${joueur.id_selection}" name="note" value="5" ${noteValue == 5 ? 'checked' : ''} />
-                                <label for="star5-${joueur.id_selection}" title="5 étoiles"></label>
-                                
-                                <input type="radio" id="star4-${joueur.id_selection}" name="note" value="4" ${noteValue == 4 ? 'checked' : ''} />
-                                <label for="star4-${joueur.id_selection}" title="4 étoiles"></label>
-                                
-                                <input type="radio" id="star3-${joueur.id_selection}" name="note" value="3" ${noteValue == 3 ? 'checked' : ''} />
-                                <label for="star3-${joueur.id_selection}" title="3 étoiles"></label>
-                                
-                                <input type="radio" id="star2-${joueur.id_selection}" name="note" value="2" ${noteValue == 2 ? 'checked' : ''} />
-                                <label for="star2-${joueur.id_selection}" title="2 étoiles"></label>
-                                
-                                <input type="radio" id="star1-${joueur.id_selection}" name="note" value="1" ${noteValue == 1 ? 'checked' : 'checked'} />
-                                <label for="star1-${joueur.id_selection}" title="1 étoile"></label>
-                            </div>
-                            <input type="hidden" name="commentaire" value="" />
-                            
-                            <div style="margin-top: 10px;">
-                                <button type="submit" class="btn btn-edit">Enregistrer l'évaluation</button>
-                            </div>
-                        </form>
-                    </div>
-                `;
+    <div class="player-evaluation">
+        <h3>${joueur.nom_joueur || 'N/A'} ${joueur.prenom_joueur || 'N/A'} - ${joueur.poste || 'N/A'}</h3>
+        <form class="evaluation-form" id="${formId}">
+            <input type="hidden" name="numero_licence" value="${joueur.numero_licence}">
+            <input type="hidden" name="id_match" value="${idMatch}">
+            
+            <label for="evaluation-${joueur.numero_licence}">Note (1 à 5):</label>
+            <input type="number" 
+                   id="evaluation-${joueur.numero_licence}" 
+                   name="evaluation" 
+                   min="1" 
+                   max="5" 
+                   value="${noteValue}" 
+                   required 
+                   style="width: 60px; margin-left: 10px;">
+            
+            <div style="margin-top: 10px;">
+                <button type="submit" class="btn btn-edit">Enregistrer l'évaluation</button>
+            </div>
+        </form>
+    </div>
+`;
+
+                
             });
             
             return html;
         }
         
         // Fonction pour soumettre l'évaluation d'un joueur
-        async function submitEvaluation(data, token, idMatch) {
-            try {
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=evaluer&id_match=${idMatch}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const responseData = await response.json();
-                
-                if (responseData.success) {
-                    document.getElementById('success-message').textContent = 'Évaluation enregistrée avec succès.';
-                    
-                    // Effacer le message de succès après 2 secondes
-                    setTimeout(() => {
-                        document.getElementById('success-message').textContent = '';
-                    }, 2000);
-                } else {
-                    document.getElementById('error-message').textContent = responseData.error || 'Erreur lors de l\'enregistrement de l\'évaluation.';
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                document.getElementById('error-message').textContent = 'Erreur lors de l\'envoi des données.';
-            }
-        }
+ // Fonction pour soumettre l'évaluation d'un joueur
+async function submitEvaluation(formData, token, idMatch) {
+    const data = {
+        numero_licence: formData.get('numero_licence'),
+        id_match: formData.get('id_match'),
+        evaluation: parseInt(formData.get('evaluation'))
+    };
+
+    try {
+    const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=feuille_match&sub_action=valider_evaluation&id_match=${idMatch}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+
+    const text = await response.text(); // <-- Affiche le contenu brut
+    console.log('Réponse brute:', text);
+
+    let responseData;
+    try {
+        responseData = JSON.parse(text); // <-- Essaye de parser
+    } catch (e) {
+        document.getElementById('error-message').textContent = "Erreur : réponse invalide reçue du serveur.";
+        return;
+    }
+
+    if (responseData.success) {
+        document.getElementById('success-message').textContent = 'Évaluation enregistrée avec succès.';
+        setTimeout(() => {
+            document.getElementById('success-message').textContent = '';
+        }, 2000);
+    } else {
+        document.getElementById('error-message').textContent = responseData.error || 'Erreur lors de l\'enregistrement de l\'évaluation.';
+    }
+} catch (error) {
+    console.error('Erreur:', error);
+    document.getElementById('error-message').textContent = 'Erreur lors de l\'envoi des données.';
+}
+
+}
+
     </script>
 </body>
 </html>

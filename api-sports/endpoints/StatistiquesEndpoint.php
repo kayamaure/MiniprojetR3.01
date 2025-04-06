@@ -38,7 +38,12 @@ switch ($type) {
         ]);
         break;
 
-    case 'joueur':
+        case 'joueurs':
+            $joueurs = $joueurModel->getAll(); // Méthode à créer dans Joueur.php
+            echo json_encode($joueurs);
+            break; 
+
+    case 'joueur-stats':
         if (!$numeroLicence) {
             http_response_code(400);
             echo json_encode(["error" => "Paramètre 'numero_licence' requis"]);

@@ -82,7 +82,7 @@
         // Fonction pour récupérer les détails du match et les joueurs
         async function fetchMatchDetails(idMatch, token) {
             try {
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=feuille_match&id_match=${idMatch}`, {
+                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=feuille_match&sub_action=afficher&id_match=${idMatch}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -131,10 +131,10 @@
             
             if (match.etat_feuille === 'Non validé' || match.statut === 'À venir') {
                 actionsHtml += `
-                    <a href="#" class="btn btn-add" onclick="validerFeuille('${idMatch}'); return false;">
-                        Valider la Feuille de Match
-                    </a>
-                `;
+                <a href="#" class="btn btn-add" onclick="validerFeuille('${idMatch}', localStorage.getItem('authToken')); return false;">
+    Valider la Feuille de Match
+</a>
+     `;
             } else if (match.etat_feuille === 'Validé' && match.statut === 'À venir') {
                 actionsHtml += '<p>La feuille de match est validée, mais vous pouvez toujours la modifier.</p>';
             }
@@ -205,33 +205,45 @@
         }
         
         // Fonction pour valider la feuille de match
-        async function validerFeuille(idMatch) {
-            try {
-                const token = localStorage.getItem('authToken');
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=valider_feuille&id_match=${idMatch}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    document.getElementById('success-message').textContent = 'Feuille de match validée avec succès.';
-                    // Recharger les détails du match après validation
-                    setTimeout(() => {
-                        fetchMatchDetails(idMatch, token);
-                        document.getElementById('success-message').textContent = '';
-                    }, 2000);
-                } else {
-                    document.getElementById('error-message').textContent = data.error || 'Erreur lors de la validation de la feuille de match.';
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                document.getElementById('error-message').textContent = 'Erreur lors de la validation de la feuille de match.';
+        async function validerFeuille(idMatch, token) {
+    try {
+        console.log("🔄 Validation en cours...");
+        console.log("➡️ idMatch:", idMatch);
+        console.log("🛡️ token:", token);
+
+        const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=feuille_match&sub_action=valider_feuille&id_match=${idMatch}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
+        });
+
+        const data = await response.json();
+
+        console.log("✅ Réponse brute:", response);
+        console.log("📦 Données JSON:", data);
+
+        const successMessage = data.success || data.message;
+
+        if (successMessage) {
+            document.getElementById('success-message').style.color = 'green';
+            document.getElementById('success-message').textContent = '✅ ' + successMessage + ' Redirection en cours...';
+
+            // Redirection après 2 secondes
+            setTimeout(() => {
+    window.location.href = '/MiniprojetR3.01/frontend/views/matchs/index.php';
+}, 2000);
+        } else {
+            document.getElementById('error-message').textContent = data.error || '❌ Une erreur est survenue lors de la validation.';
         }
+    } catch (error) {
+        console.error('🚨 Erreur dans validerFeuille:', error);
+        document.getElementById('error-message').textContent = '❌ Erreur technique lors de la validation de la feuille de match.';
+    }
+}
+
+
+
     </script>
 </body>
 </html>

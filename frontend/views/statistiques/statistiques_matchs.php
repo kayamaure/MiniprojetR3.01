@@ -71,7 +71,7 @@ include '../../views/header.php';
         // Function to fetch match statistics from the API
         async function fetchMatchStatistics(token) {
             try {
-                const response = await fetch('http://localhost/MiniprojetR3.01/api-sports/index.php?action=match_statistics', {
+                const response = await fetch('http://localhost/MiniprojetR3.01/api-sports/public/index.php?action=statistiques&type=matchs', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -88,12 +88,15 @@ include '../../views/header.php';
                 document.getElementById('matchs-nuls').textContent = data.totaux.matchs_nuls || '0';
                 document.getElementById('matchs-perdus').textContent = data.totaux.matchs_perdus || '0';
                 
-                document.getElementById('pourcentage-gagnes').textContent = 
-                    (data.pourcentages.pourcentage_gagnes || 0).toFixed(2);
-                document.getElementById('pourcentage-nuls').textContent = 
-                    (data.pourcentages.pourcentage_nuls || 0).toFixed(2);
-                document.getElementById('pourcentage-perdus').textContent = 
-                    (data.pourcentages.pourcentage_perdus || 0).toFixed(2);
+                document.getElementById('pourcentage-gagnes').textContent =
+                Number(data.pourcentages.pourcentage_gagnes || 0).toFixed(2);
+
+                document.getElementById('pourcentage-nuls').textContent =
+                Number(data.pourcentages.pourcentage_nuls || 0).toFixed(2);
+
+                document.getElementById('pourcentage-perdus').textContent =
+                Number(data.pourcentages.pourcentage_perdus || 0).toFixed(2);
+
                 
                 // Hide loading message and show content
                 document.getElementById('match-stats-loading').style.display = 'none';

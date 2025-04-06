@@ -25,16 +25,24 @@ switch ($method) {
                 http_response_code(404);
                 echo json_encode(["error" => "Match non trouvé"]);
             }
-        } else {
-            // Si filtre statut fourni
-            if (isset($_GET['statut'])) {
-                $matches = $matchModel->obtenirMatchsParStatut($_GET['statut']);
+        } elseif (isset($_GET['filter'])) {
+            $filter = $_GET['filter'];
+    
+            if ($filter === 'a_venir') {
+                $matches = $matchModel->obtenirMatchsParStatut('À venir');
+            } elseif ($filter === 'passes') {
+                $matches = $matchModel->obtenirMatchsParStatut('Terminé');
             } else {
-                $matches = $matchModel->obtenirTousLesMatchs();
+                $matches = $matchModel->obtenirTousLesMatchs(); // fallback
             }
+    
+            echo json_encode($matches);
+        } else {
+            $matches = $matchModel->obtenirTousLesMatchs();
             echo json_encode($matches);
         }
         break;
+    
 
     // ------------------- POST -------------------------
     case 'POST':

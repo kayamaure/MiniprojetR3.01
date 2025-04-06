@@ -59,12 +59,21 @@
             <div>
                 <label for="poste">Poste:</label>
                 <select id="poste" name="poste" required>
-                    <option value="">Sélectionnez un poste</option>
-                    <option value="Gardien">Gardien</option>
-                    <option value="Défenseur">Défenseur</option>
-                    <option value="Milieu">Milieu</option>
-                    <option value="Attaquant">Attaquant</option>
-                </select>
+    <option value="">Sélectionnez un poste</option>
+    <option value="Gardien de But">Gardien de But</option>
+    <option value="Défenseur Central">Défenseur Central</option>
+    <option value="Défenseur Latéral">Défenseur Latéral</option>
+    <option value="Arrière Latéral Offensif">Arrière Latéral Offensif</option>
+    <option value="Libéro">Libéro</option>
+    <option value="Milieu Défensif">Milieu Défensif</option>
+    <option value="Milieu Central">Milieu Central</option>
+    <option value="Milieu Offensif">Milieu Offensif</option>
+    <option value="Milieu Latéral">Milieu Latéral</option>
+    <option value="Attaquant Central">Attaquant Central</option>
+    <option value="Avant-Centre">Avant-Centre</option>
+    <option value="Ailier">Ailier</option>
+    <option value="Second Attaquant">Second Attaquant</option>
+</select>
             </div>
             
             <button type="submit" class="btn btn-add">Ajouter</button>
@@ -74,159 +83,161 @@
     <?php include '../../views/footer.php'; ?>
     
     <script>
-        // Vérifier l'authentification au chargement de la page
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                // Rediriger vers la page de connexion si pas de token
-                window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
-                return;
-            }
-            
-            // Récupérer l'ID du match depuis l'URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const idMatch = urlParams.get('id_match');
-            
-            if (!idMatch) {
-                document.getElementById('error-message').textContent = 'ID du match non spécifié.';
-                return;
-            }
-            
-            // Configuration du lien de retour
-            document.getElementById('back-link').href = `index.php?id_match=${idMatch}`;
-            
-            // Définir l'ID du match dans le formulaire
-            document.getElementById('id_match').value = idMatch;
-            
-            // Récupérer les détails du match et les joueurs disponibles
-            fetchMatchAndPlayers(idMatch, token);
-            
-            // Gestion du formulaire d'ajout de joueur
-            document.getElementById('ajout-joueur-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await addPlayerToMatch(token);
-            });
-            
-            // Gestion de l'affichage des détails du joueur sélectionné
-            document.getElementById('numero_licence').addEventListener('change', function() {
-                displayPlayerDetails(this.value);
-            });
+let donneesJoueurs = []; // Données des joueurs (globales)
+
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
+        return;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const idMatch = urlParams.get('id_match');
+    if (!idMatch) {
+        afficherErreur("ID du match non spécifié.");
+        return;
+    }
+
+    initialiserPage(idMatch, token);
+});
+
+function initialiserPage(idMatch, token) {
+    document.getElementById('back-link').href = `index.php?id_match=${idMatch}`;
+    document.getElementById('id_match').value = idMatch;
+
+    recupererMatchEtJoueurs(idMatch, token);
+
+    document.getElementById('ajout-joueur-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        await ajouterJoueurDansFeuille(token);
+    });
+
+    document.getElementById('numero_licence').addEventListener('change', function () {
+        afficherDetailsJoueur(this.value);
+    });
+}
+
+function afficherErreur(message) {
+    const erreurDiv = document.getElementById('error-message');
+    erreurDiv.textContent = message;
+    erreurDiv.style.color = 'red';
+}
+
+function afficherSucces(message) {
+    const succesDiv = document.getElementById('success-message');
+    succesDiv.textContent = message;
+    succesDiv.style.color = 'green';
+}
+
+async function recupererMatchEtJoueurs(idMatch, token) {
+    try {
+        const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=feuille_match&sub_action=ajouter&id_match=${idMatch}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        
-        // Variable globale pour stocker les données des joueurs
-        let playerData = [];
-        
-        // Fonction pour récupérer les détails du match et les joueurs disponibles
-        async function fetchMatchAndPlayers(idMatch, token) {
-            try {
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=ajouter&id_match=${idMatch}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    document.getElementById('error-message').textContent = data.error;
-                    return;
-                }
-                
-                // Afficher les détails du match
-                if (data.match) {
-                    document.getElementById('match-details').innerHTML = `
-                        <h2>Match du ${data.match.date_match} à ${data.match.heure_match}</h2>
-                        <p><strong>Contre:</strong> ${data.match.nom_equipe_adverse}</p>
-                        <p><strong>Lieu:</strong> ${data.match.lieu_de_rencontre}</p>
-                    `;
-                }
-                
-                // Stocker les données des joueurs dans la variable globale
-                playerData = data.joueursNonSelectionnes || [];
-                
-                // Remplir la liste déroulante des joueurs
-                const playerSelect = document.getElementById('numero_licence');
-                playerSelect.innerHTML = '<option value="">Sélectionnez un joueur</option>';
-                
-                if (playerData.length === 0) {
-                    document.getElementById('error-message').textContent = 'Aucun joueur disponible pour ce match.';
-                } else {
-                    playerData.forEach(player => {
-                        const option = document.createElement('option');
-                        option.value = player.numero_licence;
-                        option.textContent = `${player.nom} ${player.prenom}`;
-                        playerSelect.appendChild(option);
-                    });
-                }
-                
-            } catch (error) {
-                console.error('Erreur:', error);
-                document.getElementById('error-message').textContent = 'Erreur lors de la récupération des données du match et des joueurs.';
-            }
+
+        const data = await response.json();
+        if (data.error) return afficherErreur(data.error);
+
+        afficherDetailsMatch(data.match);
+        remplirListeJoueurs(data.joueursNonSelectionnes);
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        afficherErreur('Erreur lors de la récupération des données du match et des joueurs.');
+    }
+}
+
+function afficherDetailsMatch(match) {
+    if (!match) {
+        afficherErreur('Match non trouvé.');
+        return;
+    }
+
+    document.getElementById('match-details').innerHTML = `
+        <h2>Match du ${match.date_match} à ${match.heure_match}</h2>
+        <p><strong>Contre:</strong> ${match.nom_equipe_adverse}</p>
+        <p><strong>Lieu:</strong> ${match.lieu_de_rencontre}</p>
+    `;
+}
+
+function remplirListeJoueurs(joueurs) {
+    donneesJoueurs = joueurs || [];
+    const select = document.getElementById('numero_licence');
+    select.innerHTML = '<option value="">Sélectionnez un joueur</option>';
+
+    if (donneesJoueurs.length === 0) {
+        afficherErreur("Aucun joueur disponible pour ce match.");
+    } else {
+        donneesJoueurs.forEach(j => {
+            const option = document.createElement('option');
+            option.value = j.numero_licence;
+            option.textContent = `${j.nom} ${j.prenom}`;
+            select.appendChild(option);
+        });
+    }
+}
+
+function afficherDetailsJoueur(numero_licence) {
+    const container = document.getElementById('player-details');
+    if (!numero_licence) {
+        container.innerHTML = '<p>Sélectionnez un joueur pour voir les détails.</p>';
+        return;
+    }
+
+    const joueur = donneesJoueurs.find(p => p.numero_licence === numero_licence);
+    if (!joueur) {
+        container.innerHTML = '<p>Aucune information disponible pour ce joueur.</p>';
+        return;
+    }
+
+    container.innerHTML = `
+        <p><strong>Taille:</strong> ${joueur.taille || 'N/A'} m</p>
+        <p><strong>Poids:</strong> ${joueur.poids || 'N/A'} kg</p>
+        <p><strong>Dernier Commentaire:</strong> ${joueur.commentaire?.texte_commentaire || 'Pas de commentaire'}</p>
+        <p><strong>Moyenne des Évaluations:</strong> ${joueur.moyenne_evaluation ? parseFloat(joueur.moyenne_evaluation).toFixed(2) : 'Aucune évaluation'}</p>
+    `;
+}
+
+async function ajouterJoueurDansFeuille(token) {
+    const formulaire = document.getElementById('ajout-joueur-form');
+    const formData = new FormData(formulaire);
+    const data = Object.fromEntries(formData.entries());
+    const idMatch = data.id_match;
+
+    console.log("📤 Données envoyées :", data); 
+
+    try {
+        const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=feuille_match&sub_action=ajouter&id_match=${idMatch}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.message || result.success) {
+            afficherSucces('✅ Joueur ajouté avec succès à la feuille de match.');
+            formulaire.reset();
+            document.getElementById('player-details').innerHTML = '<p>Sélectionnez un joueur pour voir les détails.</p>';
+
+            setTimeout(() => {
+                recupererMatchEtJoueurs(idMatch, token);
+                document.getElementById('success-message').textContent = '';
+            }, 2000);
+        } else {
+            afficherErreur(result.error || 'Erreur lors de l\'ajout du joueur.');
         }
-        
-        // Fonction pour afficher les détails du joueur sélectionné
-        function displayPlayerDetails(numero_licence) {
-            const playerDetails = document.getElementById('player-details');
-            
-            if (!numero_licence) {
-                playerDetails.innerHTML = '<p>Sélectionnez un joueur pour voir les détails.</p>';
-                return;
-            }
-            
-            const selectedPlayer = playerData.find(player => player.numero_licence === numero_licence);
-            
-            if (selectedPlayer) {
-                playerDetails.innerHTML = `
-                    <p><strong>Taille:</strong> ${selectedPlayer.taille || 'N/A'} m</p>
-                    <p><strong>Poids:</strong> ${selectedPlayer.poids || 'N/A'} kg</p>
-                    <p><strong>Statut:</strong> ${selectedPlayer.statut || 'N/A'}</p>
-                    <p><strong>Dernier Commentaire:</strong> ${selectedPlayer.commentaire ? selectedPlayer.commentaire.texte_commentaire : 'Pas de commentaire'}</p>
-                    <p><strong>Moyenne des Évaluations:</strong> ${selectedPlayer.moyenne_evaluation ? parseFloat(selectedPlayer.moyenne_evaluation).toFixed(2) : 'Aucune évaluation'}</p>
-                `;
-            } else {
-                playerDetails.innerHTML = '<p>Aucune information disponible pour ce joueur.</p>';
-            }
-        }
-        
-        // Fonction pour ajouter un joueur à la feuille de match
-        async function addPlayerToMatch(token) {
-            try {
-                const form = document.getElementById('ajout-joueur-form');
-                const formData = new FormData(form);
-                const data = Object.fromEntries(formData.entries());
-                
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=ajouter&id_match=${data.id_match}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const responseData = await response.json();
-                
-                if (responseData.success) {
-                    document.getElementById('success-message').textContent = 'Joueur ajouté avec succès à la feuille de match.';
-                    
-                    // Réinitialiser le formulaire
-                    form.reset();
-                    document.getElementById('player-details').innerHTML = '<p>Sélectionnez un joueur pour voir les détails.</p>';
-                    
-                    // Rafraîchir la liste des joueurs disponibles après 2 secondes
-                    setTimeout(() => {
-                        fetchMatchAndPlayers(data.id_match, token);
-                        document.getElementById('success-message').textContent = '';
-                    }, 2000);
-                } else {
-                    document.getElementById('error-message').textContent = responseData.error || 'Erreur lors de l\'ajout du joueur à la feuille de match.';
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                document.getElementById('error-message').textContent = 'Erreur lors de l\'envoi des données.';
-            }
-        }
-    </script>
+    } catch (error) {
+        console.error('Erreur:', error);
+        afficherErreur('Erreur lors de l\'envoi des données.');
+    }
+}
+</script>
+
+
 </body>
 </html>

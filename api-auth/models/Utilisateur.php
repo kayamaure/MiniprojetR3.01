@@ -39,6 +39,21 @@ class Utilisateur {
         $stmt = $this->pdo->prepare("DELETE FROM tokens WHERE token = :token");
         return $stmt->execute(['token' => $token]);
     }
+
+    public function getById($id_utilisateur) {
+        $stmt = $this->pdo->prepare("SELECT * FROM utilisateur WHERE id_utilisateur = :id");
+        $stmt->execute(['id' => $id_utilisateur]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    public function changerMotDePasse($id_utilisateur, $nouveau_hash) {
+        $stmt = $this->pdo->prepare("UPDATE utilisateur SET mot_de_passe = :mdp WHERE id_utilisateur = :id");
+        return $stmt->execute([
+            'mdp' => $nouveau_hash,
+            'id' => $id_utilisateur
+        ]);
+    }
+    
     
 }
 ?>

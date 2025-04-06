@@ -171,10 +171,20 @@ async function deleteJoueur(numeroLicence) {
 
         const data = await response.json();
         if (data.success || data.message) {
-            fetchJoueurs(token);
-        } else {
-            document.getElementById('error-message').textContent = data.error || 'Erreur lors de la suppression.';
-        }
+            const messageDiv = document.getElementById('error-message');
+            messageDiv.style.color = 'green';
+            messageDiv.textContent = '✅ Joueur supprimé avec succès.';
+
+            // Recharger les joueurs après une petite pause (optionnel)
+            setTimeout(() => {
+                fetchJoueurs(token);
+                messageDiv.textContent = ''; // Efface le message après 2 secondes
+            }, 2000);
+
+} else {
+    document.getElementById('error-message').style.color = 'red';
+    document.getElementById('error-message').textContent = data.error || 'Erreur lors de la suppression.';
+}
 
     } catch (error) {
         console.error('Erreur de suppression:', error);

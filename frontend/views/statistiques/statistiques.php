@@ -13,8 +13,9 @@ include '../../views/header.php'; ?>
     <title>Statistiques</title>
     <link rel="stylesheet" href="../../assets/css/style.css">
     <style>
-        .btn-stat {
+        .btn .btn-stat  {
             background-color: #12c2f3;
+            color: white;
         }
 
         .btn-stat:hover {

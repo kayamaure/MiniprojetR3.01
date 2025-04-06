@@ -171,30 +171,20 @@ class FeuilleMatch
     // MAJ de l'évaluation d'un joueur
     public function mettreAJourEvaluation($data)
     {
-        // Vérifier si les données sont présentes
-        if (empty($data['id_selection']) || !isset($data['evaluation'])) {
+        if (empty($data['numero_licence']) || empty($data['id_match']) || !isset($data['evaluation'])) {
             return false;
         }
-
-        // Préparer la requête pour mettre à jour l'évaluation
-        $query = "UPDATE " . $this->table . " SET evaluation = :evaluation WHERE id = :id_selection";
+    
+        $query = "UPDATE participer 
+                  SET evaluation = :evaluation 
+                  WHERE numero_licence = :numero_licence AND id_match = :id_match";
+    
         $stmt = $this->conn->prepare($query);
-
-        // Bind des paramètres
         $stmt->bindParam(':evaluation', $data['evaluation'], PDO::PARAM_INT);
-        $stmt->bindParam(':id_selection', $data['id_selection'], PDO::PARAM_INT);
-
-        $result = $stmt->execute();
-
-        // Si la mise à jour réussit, mettre à jour l'état de la feuille de match si l'id_match est fourni
-        if ($result && isset($data['id_match'])) {
-            $queryUpdateEtat = "UPDATE match_ SET etat_feuille = 'Non validé' WHERE id_match = :id_match";
-            $stmtUpdateEtat = $this->conn->prepare($queryUpdateEtat);
-            $stmtUpdateEtat->bindParam(':id_match', $data['id_match'], PDO::PARAM_INT);
-            $stmtUpdateEtat->execute();
-        }
-
-        return $result;
+        $stmt->bindParam(':numero_licence', $data['numero_licence']);
+        $stmt->bindParam(':id_match', $data['id_match']);
+    
+        return $stmt->execute();
     }
 
     // Récupérer les titulaires d'un match

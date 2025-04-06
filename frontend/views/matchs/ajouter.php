@@ -24,11 +24,11 @@ include '../../views/header.php';
         <form id="match-form">
             <!-- Équipe adverse -->
             <div>
-                <label for="nom_adversaire">Nom de l'équipe adverse :</label>
+                <label for="nom_equipe_adverse">Nom de l'équipe adverse :</label>
                 <input
                     type="text"
-                    name="nom_adversaire"
-                    id="nom_adversaire"
+                    name="nom_equipe_adverse"
+                    id="nom_equipe_adverse"
                     placeholder="Ex: CF Exemple"
                     required>
             </div>
@@ -52,8 +52,8 @@ include '../../views/header.php';
 
             <!-- Lieu de rencontre -->
             <div>
-                <label for="lieu_match">Lieu du match :</label>
-                <select name="lieu_match" id="lieu_match" required>
+                <label for="lieu_de_rencontre">Lieu du match :</label>
+                <select name="lieu_de_rencontre" id="lieu_de_rencontre" required>
                     <option value="">-- Sélectionner --</option>
                     <option value="Domicile">Domicile</option>
                     <option value="Extérieur">Extérieur</option>
@@ -69,52 +69,55 @@ include '../../views/header.php';
     <?php include '../../views/footer.php'; ?>
 
     <script>
-        // Vérifier l'authentification au chargement de la page
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                // Rediriger vers la page de connexion si pas de token
-                window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
-            }
-            
-            // Gestion du formulaire d'ajout
-            document.getElementById('match-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                try {
-                    const token = localStorage.getItem('authToken');
-                    const formData = new FormData(this);
-                    const matchData = {};
-                    
-                    // Convertir FormData en objet
-                    for (const [key, value] of formData.entries()) {
-                        matchData[key] = value;
-                    }
-                    
-                    const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=ajouter_match', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(matchData)
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        // Rediriger vers la liste des matchs
+    // Vérifier l'authentification au chargement de la page
+    document.addEventListener('DOMContentLoaded', function () {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
+            return;
+        }
+
+        // Gestion du formulaire d'ajout
+        document.getElementById('match-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = '';
+            errorDiv.style.color = 'red';
+
+            const formData = new FormData(this);
+            const matchData = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=matchs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(matchData)
+                });
+
+                const data = await response.json();
+
+                if (data.success || data.message) {
+                    errorDiv.style.color = 'green';
+                    errorDiv.textContent = '✅ Match ajouté avec succès ! Redirection...';
+                    setTimeout(() => {
                         window.location.href = 'index.php';
-                    } else {
-                        document.getElementById('error-message').textContent = data.error || 'Erreur lors de l\'ajout du match.';
-                    }
-                } catch (error) {
-                    console.error('Error adding match:', error);
-                    document.getElementById('error-message').textContent = 'Erreur lors de l\'ajout du match.';
+                    }, 1500);
+                } else {
+                    errorDiv.textContent = data.error || 'Erreur lors de l\'ajout du match.';
                 }
-            });
+
+            } catch (error) {
+                console.error('Error adding match:', error);
+                errorDiv.textContent = 'Erreur lors de l\'ajout du match.';
+            }
         });
-    </script>
+    });
+</script>
+
 </body>
 
 </html>

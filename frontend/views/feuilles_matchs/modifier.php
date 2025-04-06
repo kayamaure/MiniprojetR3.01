@@ -71,7 +71,8 @@
         // Fonction pour récupérer les détails du match et les joueurs sélectionnés
         async function fetchMatchAndPlayers(idMatch, token) {
             try {
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=modifier&id_match=${idMatch}`, {
+                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=feuille_match&sub_action=modifier&id_match=${idMatch}`, {
+
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -115,7 +116,7 @@
             
             // Grouper les joueurs par rôle
             const titulaires = players.filter(j => j.role === 'Titulaire');
-            const remplacants = players.filter(j => j.role === 'Remplacant');
+            const remplacants = players.filter(j => j.role === 'Remplaçant');
             
             // Afficher les titulaires
             html += '<h3>Titulaires</h3>';
@@ -126,11 +127,11 @@
             }
             
             // Afficher les remplacants
-            html += '<h3>Remplacants</h3>';
+            html += '<h3>Remplaçants</h3>';
             if (remplacants.length === 0) {
-                html += '<p>Aucun remplacant sélectionné.</p>';
+                html += '<p>Aucun remplaçant sélectionné.</p>';
             } else {
-                html += createPlayerTable(remplacants, idMatch, token, 'Remplacant');
+                html += createPlayerTable(remplacants, idMatch, token, 'Remplaçant');
             }
             
             container.innerHTML = html;
@@ -168,22 +169,33 @@
                         <td>${joueur.nom || 'N/A'}</td>
                         <td>${joueur.prenom || 'N/A'}</td>
                         <td>
-                            <form class="modifier-form" id="form-${joueur.id_selection}">
-                                <input type="hidden" name="id_selection" value="${joueur.id_selection}">
-                                <input type="hidden" name="id_match" value="${idMatch}">
-                                <select name="role" required>
-                                    <option value="Titulaire" ${joueur.role === 'Titulaire' ? 'selected' : ''}>Titulaire</option>
-                                    <option value="Remplacant" ${joueur.role === 'Remplacant' ? 'selected' : ''}>Remplacant</option>
-                                </select>
-                            </form>
+                        <form class="modifier-form" id="form-${joueur.id_selection}">
+    <input type="hidden" name="id_selection" value="${joueur.id_selection}">
+    <input type="hidden" name="id_match" value="${idMatch}">
+    <input type="hidden" name="numero_licence" value="${joueur.numero_licence}">
+    <select name="role" required>
+        <option value="Titulaire" ${joueur.role === 'Titulaire' ? 'selected' : ''}>Titulaire</option>
+        <option value="Remplacant" ${joueur.role === 'Remplaçant' ? 'selected' : ''}>Remplaant</option>
+    </select>
+</form>
                         </td>
                         <td>
-                            <select form="form-${joueur.id_selection}" name="poste" required>
-                                <option value="Gardien" ${joueur.poste === 'Gardien' ? 'selected' : ''}>Gardien</option>
-                                <option value="Défenseur" ${joueur.poste === 'Défenseur' ? 'selected' : ''}>Défenseur</option>
-                                <option value="Milieu" ${joueur.poste === 'Milieu' ? 'selected' : ''}>Milieu</option>
-                                <option value="Attaquant" ${joueur.poste === 'Attaquant' ? 'selected' : ''}>Attaquant</option>
-                            </select>
+                        <select form="form-${joueur.id_selection}" name="poste" required>
+    <option value="">Sélectionnez un poste</option>
+    <option value="Gardien de But" ${joueur.poste === 'Gardien de But' ? 'selected' : ''}>Gardien de But</option>
+    <option value="Défenseur Central" ${joueur.poste === 'Défenseur Central' ? 'selected' : ''}>Défenseur Central</option>
+    <option value="Défenseur Latéral" ${joueur.poste === 'Défenseur Latéral' ? 'selected' : ''}>Défenseur Latéral</option>
+    <option value="Arrière Latéral Offensif" ${joueur.poste === 'Arrière Latéral Offensif' ? 'selected' : ''}>Arrière Latéral Offensif</option>
+    <option value="Libéro" ${joueur.poste === 'Libéro' ? 'selected' : ''}>Libéro</option>
+    <option value="Milieu Défensif" ${joueur.poste === 'Milieu Défensif' ? 'selected' : ''}>Milieu Défensif</option>
+    <option value="Milieu Central" ${joueur.poste === 'Milieu Central' ? 'selected' : ''}>Milieu Central</option>
+    <option value="Milieu Offensif" ${joueur.poste === 'Milieu Offensif' ? 'selected' : ''}>Milieu Offensif</option>
+    <option value="Milieu Latéral" ${joueur.poste === 'Milieu Latéral' ? 'selected' : ''}>Milieu Latéral</option>
+    <option value="Attaquant Central" ${joueur.poste === 'Attaquant Central' ? 'selected' : ''}>Attaquant Central</option>
+    <option value="Avant-Centre" ${joueur.poste === 'Avant-Centre' ? 'selected' : ''}>Avant-Centre</option>
+    <option value="Ailier" ${joueur.poste === 'Ailier' ? 'selected' : ''}>Ailier</option>
+    <option value="Second Attaquant" ${joueur.poste === 'Second Attaquant' ? 'selected' : ''}>Second Attaquant</option>
+</select>
                         </td>
                         <td>
                             <button type="submit" form="form-${joueur.id_selection}" class="btn btn-edit">Modifier</button>
@@ -207,8 +219,8 @@
                 document.getElementById('success-message').textContent = 'Mise à jour en cours...';
                 document.getElementById('error-message').textContent = '';
                 
-                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/index.php?action=update_player`, {
-                    method: 'POST',
+                const response = await fetch(`http://127.0.0.1/MiniprojetR3.01/api-sports/public/index.php?action=feuille_match&sub_action=valider_modification&id_match=${idMatch}`, {
+                    method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`

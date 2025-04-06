@@ -57,7 +57,6 @@ include 'header.php';
 
             <button type="submit" class="btn-submit">Se connecter</button>
             <div class="loader" id="loader"></div>
-            <p class="info-message">Note : La session expirera automatiquement après 15 minutes d'inactivité.</p>
         </form>
 
         <p class="create-account-container">

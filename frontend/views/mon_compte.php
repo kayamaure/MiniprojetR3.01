@@ -1,61 +1,107 @@
-<?php if (session_status() === PHP_SESSION_NONE) {
+<?php
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-include 'header.php'; ?>
+include 'header.php';
+?>
 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon Compte</title>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Mon Compte</h1>
+<div class="container">
+    <h1>Mon Compte</h1>
 
-        <?php if (!empty($user)): ?>
-            <p><strong>Nom d’utilisateur :</strong> <?= htmlspecialchars($user['nom_utilisateur'], ENT_QUOTES, 'UTF-8') ?></p>
-
-            <!-- Formulaire de changement de mot de passe -->
-            <h2>Changer de mot de passe</h2>
-            <?php if (!empty($error)): ?>
-                <p class="error-message"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
-            <?php endif; ?>
-            <?php if (!empty($success)): ?>
-                <p class="success-message"><?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?></p>
-            <?php endif; ?>
-
-            <form action="../controllers/MonCompteController.php?action=updatePassword" method="post" onsubmit="return confirmPasswordChange();">
-                <div class="form-group">
-                    <label for="current_password">Mot de passe actuel :</label>
-                    <input type="password" name="current_password" id="current_password" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="new_password">Nouveau mot de passe :</label>
-                    <input type="password" name="new_password" id="new_password" required>
-                </div>
-                <div class="form-group">
-                    <label for="confirm_password">Confirmer le mot de passe :</label>
-                    <input type="password" name="confirm_password" id="confirm_password" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Changer le mot de passe</button>
-            </form>
-        <?php else: ?>
-            <p>Aucune information disponible pour l’utilisateur.</p>
-        <?php endif; ?>
-
-        <p>
-            <a href="../views/dashboard.php" class="btn btn-back">Retour au dashboard</a>
-
-        </p>
+    <div id="infos-utilisateur">
+        <p><strong>Nom d’utilisateur :</strong> <span id="nom-utilisateur">Chargement...</span></p>
     </div>
-    <script>
-    function confirmPasswordChange() {
-        return confirm("Êtes-vous sûr de vouloir changer votre mot de passe ?");
+
+    <h2>Changer mon mot de passe</h2>
+    <div id="message-retour" style="margin-bottom: 1rem;"></div>
+
+    <form id="form-changement-mdp">
+        <div class="form-group">
+            <label for="mot_de_passe_actuel">Mot de passe actuel :</label>
+            <input type="password" id="mot_de_passe_actuel" required>
+        </div>
+
+        <div class="form-group">
+            <label for="nouveau_mot_de_passe">Nouveau mot de passe :</label>
+            <input type="password" id="nouveau_mot_de_passe" required>
+        </div>
+
+        <div class="form-group">
+            <label for="confirmation_mot_de_passe">Confirmer le nouveau mot de passe :</label>
+            <input type="password" id="confirmation_mot_de_passe" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+    </form>
+
+    <p>
+        <a href="../views/dashboard.php" class="btn btn-back">Retour au tableau de bord</a>
+    </p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        window.location.href = '/MiniprojetR3.01/frontend/views/connexion.php';
+        return;
     }
-    </script>
+
+    // Décoder le token JWT pour afficher le nom d'utilisateur
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    document.getElementById('nom-utilisateur').textContent = payload.nom_utilisateur ?? '(non défini)';
+
+    const formulaire = document.getElementById('form-changement-mdp');
+    const messageRetour = document.getElementById('message-retour');
+
+    formulaire.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        messageRetour.innerHTML = '';
+
+        const motAncien = document.getElementById('mot_de_passe_actuel').value;
+        const motNouveau = document.getElementById('nouveau_mot_de_passe').value;
+        const motConfirmation = document.getElementById('confirmation_mot_de_passe').value;
+
+        if (motNouveau !== motConfirmation) {
+            messageRetour.innerHTML = `<p class="error-message">Les mots de passe ne correspondent pas.</p>`;
+            return;
+        }
+
+        try {
+            const reponse = await fetch('http://localhost/MiniprojetR3.01/api-auth/public/modifier', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    ancien_mot_de_passe: motAncien,
+                    nouveau_mot_de_passe: motNouveau
+                })
+            });
+
+            const resultat = await reponse.json();
+
+            if (resultat.success) {
+                messageRetour.innerHTML = `<p class="success-message">${resultat.success}</p>`;
+                formulaire.reset();
+            } else {
+                messageRetour.innerHTML = `<p class="error-message">${resultat.error || "Une erreur est survenue."}</p>`;
+            }
+        } catch (erreur) {
+            console.error(erreur);
+            messageRetour.innerHTML = `<p class="error-message">Erreur lors de la communication avec le serveur.</p>`;
+        }
+    });
+});
+</script>
 </body>
 </html>

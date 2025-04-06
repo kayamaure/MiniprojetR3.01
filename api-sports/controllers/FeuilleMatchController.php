@@ -168,15 +168,15 @@ switch ($action) {
             exit;
         }
         $input = json_decode(file_get_contents("php://input"), true);
-        $joueursASupprimer = $input['joueur_a_supprimer'] ?? [];
-        if (empty($joueursASupprimer)) {
+        $idsASupprimer = $inputData['joueurs_a_supprimer'] ?? [];
+        if (empty($idsASupprimer)) {
             echo json_encode(["error" => "Aucun joueur sélectionné pour suppression."]);
             exit;
         }
+        
         try {
-            foreach ($joueursASupprimer as $joueur) {
-                $numeroLicence = $joueur['numero_licence'];
-                $feuilleMatch->supprimerJoueurParLicenceEtMatch($numeroLicence, $id_match);
+            foreach ($idsASupprimer as $id_selection) {
+                $feuilleMatch->supprimerJoueurDuMatch($id_selection);
             }
             echo json_encode(["success" => "Les joueurs sélectionnés ont été supprimés avec succès."]);
             exit;
@@ -184,6 +184,8 @@ switch ($action) {
             echo json_encode(["error" => "Erreur lors de la suppression: " . $e->getMessage()]);
             exit;
         }
+        
+        
         break;
 
     case 'valider_selection':
